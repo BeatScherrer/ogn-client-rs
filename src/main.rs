@@ -12,18 +12,22 @@ fn main() -> Result<(), Error> {
 
   let remote = "aprs.glidernet.org:14580";
 
+  let client = APRSClient::new("aprs.glidernet.org", 14580);
+
   if let Ok(mut stream) = TcpStream::connect(&remote) {
     println!("Connected to the server '{}'!", &remote);
 
     // assign buffer to be reused
     let mut buffer = [0, 128];
 
+    let x = 4;
+
     // send initial message
     /*
     note: m/10 means as much as:
     give me all the positions in a 10km of the position I am going to report you
     */
-    let login_message = String::from("user BEAT pass -1 vers RustClient filter m/10");
+    let login_message = String::from("user BEAT pass -1 vers RustClient filter r/33/-97/200 t/n");
     let mut bytes_written = stream.write(login_message.as_bytes()).unwrap();
     println!("wrote {:?} bytes", bytes_written);
 
@@ -65,15 +69,36 @@ fn create_aprs_login(login_data: LoginData) -> String {
 }
 
 struct APRSClient {
-  socket: std::net::IpAddr,
-  filter: String,
+  m_socket: std::net::SocketAddr,
+  // m_socket: std::net::IpAddr,
+  // m_filter: String,
+  // m_connection: TcpStream,
+  m_connection: TcpStream,
 }
 
 impl APRSClient {
-  fn new(socket: std::net::IpAddr) -> Self {
+  pub fn new(ip: std::net::IpAddr, port: u16) -> Self {
     APRSClient {
-      socket,
-      filter: String::from(""),
+      m_socket: std::net::SocketAddr::from((ip, port)),
+      m_connection: TcpStream::connect(m_socket).unwrap(),
     }
+  }
+
+  /// Send bytes and return the answer
+  pub fn send_message(&mut self, message: &str) -> Result<String, std::io::Error> {
+    let byte_message = message.as_bytes();
+
+    self.m_connection.write(byte_message)?;
+
+    // receive the answer
+    let mut buffer = [0, 128];
+    let bytes_read = self.m_connection.read(&mut buffer)?;
+
+    // convert bytes read to string slice
+    Ok(
+      std::str::from_utf8(&buffer[..bytes_read])
+        .unwrap()
+        .to_string(),
+    )
   }
 }
