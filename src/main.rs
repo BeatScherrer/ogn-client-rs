@@ -1,55 +1,15 @@
 use std::io::Error;
 use std::io::Read;
 use std::io::Write;
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-
-fn handle_client(stream: TcpStream) {
-  println!("received {:?}", stream);
-}
+use std::net::TcpStream;
 
 fn main() -> Result<(), Error> {
-  println!("Hello, world!");
+  let mut client = APRSClient::new("aprs.glidernet.org", 14580);
 
-  let remote = "aprs.glidernet.org:14580";
+  let login_message = String::from("user BEAT pass -1 vers RustClient filter r/33/-97/200 t/n");
+  let response = client.send_message(&login_message);
 
-  let client = APRSClient::new("aprs.glidernet.org", 14580);
-
-  if let Ok(mut stream) = TcpStream::connect(&remote) {
-    println!("Connected to the server '{}'!", &remote);
-
-    // assign buffer to be reused
-    let mut buffer = [0, 128];
-
-    let x = 4;
-
-    // send initial message
-    /*
-    note: m/10 means as much as:
-    give me all the positions in a 10km of the position I am going to report you
-    */
-    let login_message = String::from("user BEAT pass -1 vers RustClient filter r/33/-97/200 t/n");
-    let mut bytes_written = stream.write(login_message.as_bytes()).unwrap();
-    println!("wrote {:?} bytes", bytes_written);
-
-    // read results to buffer
-    let mut bytes_read = stream.read(&mut buffer[..])?;
-    let message = std::str::from_utf8(&buffer[..bytes_read]);
-    // print buffer
-    println!("received {} bytes: \n{:?}", bytes_read, message);
-
-    // report the position
-    let position_message = r#"OGN123456>OGNAPP:/123456h5123.45N/00123.45E'180/025/A=001000 !W66! id07123456 +100fpm +1.0rot FL011.00 gps4x5"#;
-    bytes_written = stream.write(position_message.as_bytes()).unwrap();
-    println!("wrote {:?} bytes", bytes_written);
-
-    // read the response
-    // clear the buffer first
-    bytes_read = stream.read(&mut buffer[..])?;
-    let response = std::str::from_utf8(&buffer[..bytes_read]);
-    println!("{:?}", response);
-  } else {
-    println!("Couldn't connect to server...");
-  }
+  println!("{:?}", response);
 
   Ok(())
 }
@@ -69,18 +29,15 @@ fn create_aprs_login(login_data: LoginData) -> String {
 }
 
 struct APRSClient {
-  m_socket: std::net::SocketAddr,
-  // m_socket: std::net::IpAddr,
-  // m_filter: String,
-  // m_connection: TcpStream,
   m_connection: TcpStream,
 }
 
 impl APRSClient {
-  pub fn new(ip: std::net::IpAddr, port: u16) -> Self {
+  pub fn new(target: &str, port: u16) -> Self {
+    // ip addr
     APRSClient {
-      m_socket: std::net::SocketAddr::from((ip, port)),
-      m_connection: TcpStream::connect(m_socket).unwrap(),
+      // m_socket: std::net::SocketAddr::from((target, port)),
+      m_connection: TcpStream::connect((target, port)).unwrap(),
     }
   }
 
@@ -101,4 +58,5 @@ impl APRSClient {
         .to_string(),
     )
   }
+  // TODO maybe split receiving and sending
 }
