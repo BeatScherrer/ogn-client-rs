@@ -28,6 +28,7 @@ fn create_aprs_login(login_data: LoginData) -> String {
   )
 }
 
+// TODO move to library
 struct APRSClient {
   m_connection: TcpStream,
 }
@@ -36,7 +37,6 @@ impl APRSClient {
   pub fn new(target: &str, port: u16) -> Self {
     // ip addr
     APRSClient {
-      // m_socket: std::net::SocketAddr::from((target, port)),
       m_connection: TcpStream::connect((target, port)).unwrap(),
     }
   }
