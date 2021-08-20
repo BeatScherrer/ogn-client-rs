@@ -1,5 +1,5 @@
 [package]
-name = "ogn-client-rs"
+name = "ogn_client_rs"
 version = "0.1.0"
 edition = "2018"
 

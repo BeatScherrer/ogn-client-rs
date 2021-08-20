@@ -1,23 +1,50 @@
-// use std::net::{IpAddr, Ipv4Addr, SocketAddrV4};
+use std::io::Error;
+use std::io::Read;
+use std::io::Write;
+use std::net::TcpStream;
 
-// struct AprsClient {
-//   socket: SocketAddrV4,
-// }
+pub struct APRSClient {
+  m_connection: TcpStream,
+}
 
-// impl AprsClient {
-//   /**
-//    *
-//    */
-//   fn new() -> Self {
-//     AprsClient {
-//       socket: SocketAddrV4::new(Ipv4Addr::new(aprs.glidernet.org))
-//     }
-//   }
+impl APRSClient {
+  pub fn new(target: &str, port: u16) -> Self {
+    // ip addr
+    APRSClient {
+      m_connection: TcpStream::connect((target, port)).unwrap(),
+    }
+  }
 
-//   fn connect(&self, retries: Option<u32>) {
-//     // default value for retries if not provided
-//     retries.unwrap_or(2);
-//   }
+  /// Send bytes and return the answer
+  pub fn send_message(&mut self, message: &str) -> Result<String, std::io::Error> {
+    let byte_message = message.as_bytes();
 
-//   fn disconnect(&self) {}
-// }
+    self.m_connection.write(byte_message)?;
+
+    // receive the answer
+    let mut buffer = [0, 128];
+    let bytes_read = self.m_connection.read(&mut buffer)?;
+
+    // convert bytes read to string slice
+    Ok(
+      std::str::from_utf8(&buffer[..bytes_read])
+        .unwrap()
+        .to_string(),
+    )
+  }
+  // TODO maybe split receiving and sending
+}
+
+struct LoginData<'a> {
+  pub user_name: &'a str,
+  pub pass_code: &'a str,
+  pub app_name: &'a str,
+  pub app_version: &'a str,
+}
+
+fn create_aprs_login(login_data: LoginData) -> String {
+  format!(
+    "user {} pass {} vers {} {}\n",
+    login_data.user_name, login_data.pass_code, login_data.app_name, login_data.app_version
+  )
+}
