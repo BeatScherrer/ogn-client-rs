@@ -2,7 +2,7 @@ use std::io::BufRead;
 use std::io::Read;
 use std::io::{BufReader};
 use std::net::TcpStream;
-use log::Level::{Debug, Info};
+use log::{debug, info};
 
 pub struct APRSClient<'a> {
   m_connection: TcpStream,
@@ -12,16 +12,16 @@ pub struct APRSClient<'a> {
 impl<'a> APRSClient<'a> {
   pub fn new(target: &str, port: u16) -> Self {
     // ip addr
+    info!("creating aprs client with target '{}:{}'", target, port);
+
     APRSClient {
       m_connection: TcpStream::connect((target, port)).unwrap(),
       m_buffer: &mut[0; 128],
     }
-
-    log::info!("created aprs client with target '{}:{}'", target, port);
   }
 
   pub fn run(&self) {
-    log::info!("starting the client...");
+    info!("starting the client...");
 
     // create the buffer reader first which handles read
     let mut reader = BufReader::new(&self.m_connection);
@@ -29,7 +29,7 @@ impl<'a> APRSClient<'a> {
     // create buffer
     let mut buffer: String;
 
-    log::info!("starting the listening loop...");
+    info!("starting the listening loop...");
     loop {
       // clear the buffer
       buffer.clear();
@@ -60,7 +60,7 @@ impl<'a> APRSClient<'a> {
 
   pub fn send_heart_beat(&self) {
     self.send_message("#keepalive\n");
-    log::debug!("sent heartbeat");
+    debug!("sent heartbeat");
   }
 
   fn read(&self) -> Result<String, std::io::Error> {
@@ -74,7 +74,7 @@ impl<'a> APRSClient<'a> {
 
 impl<'a> Drop for APRSClient<'a>{
   fn drop(&mut self) {
-    log::info!("...terminating the aprs client!");
+    info!("...terminating the aprs client!");
   }
 }
 
