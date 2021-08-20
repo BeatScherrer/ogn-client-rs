@@ -4,10 +4,10 @@ use std::io::Error;
 fn main() -> Result<(), Error> {
   let mut client = APRSClient::new("aprs.glidernet.org", 14580);
 
-  let login_message = String::from("user BEAT pass -1 vers RustClient filter r/33/-97/200 t/n");
-  let response = client.send_message(&login_message);
+  let login_message = String::from("user NOCALL pass  -1\n");
+  let response = client.send_message(&login_message).unwrap();
 
-  println!("{:?}", response);
+  println!("{}", response);
 
   Ok(())
 }

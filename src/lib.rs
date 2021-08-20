@@ -1,17 +1,42 @@
-use std::io::Error;
+use std::io::BufRead;
 use std::io::Read;
-use std::io::Write;
+use std::io::{BufReader};
 use std::net::TcpStream;
+use log::Level::{Debug, Info};
 
-pub struct APRSClient {
+pub struct APRSClient<'a> {
   m_connection: TcpStream,
+  m_buffer: &'a mut[u8; 128]
 }
 
-impl APRSClient {
+impl<'a> APRSClient<'a> {
   pub fn new(target: &str, port: u16) -> Self {
     // ip addr
     APRSClient {
       m_connection: TcpStream::connect((target, port)).unwrap(),
+      m_buffer: &mut[0; 128],
+    }
+
+    log::info!("created aprs client with target '{}:{}'", target, port);
+  }
+
+  pub fn run(&self) {
+    log::info!("starting the client...");
+
+    // create the buffer reader first which handles read
+    let mut reader = BufReader::new(&self.m_connection);
+
+    // create buffer
+    let mut buffer: String;
+
+    log::info!("starting the listening loop...");
+    loop {
+      // clear the buffer
+      buffer.clear();
+
+      self.send_heart_beat();
+
+      let result = reader.read_line(&mut buffer);
     }
   }
 
@@ -32,7 +57,25 @@ impl APRSClient {
         .to_string(),
     )
   }
+
+  pub fn send_heart_beat(&self) {
+    self.send_message("#keepalive\n");
+    log::debug!("sent heartbeat");
+  }
+
+  fn read(&self) -> Result<String, std::io::Error> {
+    let mut reader = BufferedReader::new(m_connection);
+    self.m_connection.read(&mut self.m_buffer);
+
+    Ok(String::from(""))
+  }
   // TODO maybe split receiving and sending
+}
+
+impl<'a> Drop for APRSClient<'a>{
+  fn drop(&mut self) {
+    log::info!("...terminating the aprs client!");
+  }
 }
 
 struct LoginData<'a> {
