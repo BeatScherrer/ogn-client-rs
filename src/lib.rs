@@ -4,6 +4,7 @@ TODO:
 - restrict buffer to 512Bytes
 - add passcode generationo
 - Check for login status before reading data
+- Move the Ogn Structures to seperate module
 
 ##aprs-is notes:
 - constant information should only be sent every 5 minutes
@@ -232,8 +233,8 @@ mod tests {
     // create the expected output
     let expected = OgnPosition{
       meta: OgnMetaData::new(),
-      timestamp: Utc::now(),
-      position: Coordinate{x: 0.0, y: 0.0}
+      timestamp: DateTime<Utc>::parse_from_str("13:02:08", "%H:%M:%S").unwrap(),
+      position: Coordinate{x: 51.4595, y: 001.1150}
     };
 
     let parsed_position = OgnPosition::parse(test_message);
