@@ -72,25 +72,25 @@ struct OgnStatusMessage {
   m_software: Option<String>,
 }
 
-impl OgnStatusMessage {
-  pub fn new() -> Self {
-    OgnStatusMessage {
-      m_pilot_name: None,
-      m_manufacturer: None,
-      m_model: None,
-      m_type: None,
-      m_serial_number: None,
-      m_competition_id: None,
-      m_competition_class: None,
-      m_competition_task: None,
-      m_base_airfield: None,
-      m_in_case_of_emergency: None,
-      m_pilot_id: None,
-      m_hardware: None,
-      m_software: None,
-    }
-  }
-}
+// impl OgnStatusMessage {
+// pub fn new() -> Self {
+//   OgnStatusMessage {
+//     m_pilot_name: None,
+//     m_manufacturer: None,
+//     m_model: None,
+//     m_type: None,
+//     m_serial_number: None,
+//     m_competition_id: None,
+//     m_competition_class: None,
+//     m_competition_task: None,
+//     m_base_airfield: None,
+//     m_in_case_of_emergency: None,
+//     m_pilot_id: None,
+//     m_hardware: None,
+//     m_software: None,
+//   }
+// }
+// }
 
 // describes an ogn position
 #[derive(Debug, PartialEq)]
@@ -103,6 +103,7 @@ struct OgnMessage {
   altitude: u32,
   ground_track: u16,
   gps_accuracy: String,
+  id: String,
 }
 
 // impl OgnMessage {
@@ -119,7 +120,7 @@ impl Parse for OgnTransmission {
 
   fn parse(message: &str) -> Self {
     // first: split at ':' to split the header from the message
-    let mut splits: Vec<&str> = message.split(':').collect();
+    let splits: Vec<&str> = message.split(':').collect();
 
     let header = parse_header(splits[0]);
     let message = parse_message(splits[1]);
@@ -135,10 +136,12 @@ fn parse_header(header: &str) -> OgnHeader {
   let header_splits: Vec<&str> = header.split('>').collect();
   let sender_id = header_splits[0];
 
-  let header_splits: Vec<&str> = header_splits[0].split(',').collect();
+  let header_splits: Vec<&str> = header_splits[1].split(',').collect();
+  // for split in header_splits {
+  //   println!("header split: \n {:#?}", split);
+  // }
   let receiver = header_splits[0];
   let transmission_method = header_splits[1];
-  let signal_strength = header_splits[2];
 
   OgnHeader {
     sender_id: sender_id.to_string(),
@@ -147,32 +150,51 @@ fn parse_header(header: &str) -> OgnHeader {
   }
 }
 
+// TODO proper error handling
 fn parse_message(message: &str) -> OgnMessage {
   // first split the message at the extra field separator
-  let splits: Vec<&str> = message.split("!W66").collect();
+  let splits: Vec<&str> = message.split("!W33!").collect();
 
   let aprs_part = splits[0];
   let ogn_extra_part = splits[1];
 
-  // split at / to get the main aprs fields
-  let aprs_splits: Vec<&str> = aprs_part.split('/').collect();
+  // let aprs_part_bytes = vec![0; 512]
+  // let aprs_part_bytes = aprs_part.as_bytes().to_vec();
 
-  //
-  let extra_ogn_splits: Vec<&str> = ogn_extra_part.split('!').collect();
+  let lat = &aprs_part[8..15].replace(".", "");
+  let lon = &aprs_part[17..25].replace(".", "");
 
-  for field in extra_ogn_splits {
-    println!("{:#?}", field);
-  }
+  let ground_track = &aprs_part[27..30];
+  let ground_speed = &aprs_part[31..34];
 
+  // println!("#####################  {:#?}", lat);
+
+  let id = &ogn_extra_part[1..11];
+  let climb_rate_string = &ogn_extra_part[12..20];
+  let ground_turning_rate = &ogn_extra_part[21..24];
+  let altitude_string = &ogn_extra_part[28..36];
+
+  // What are these fields supposed to contain?
+  // let signal_strength = &ogn_extra_part[37..43];
+  // let what_is_this = &ogn_extra_part[44..46];
+  // let what_frequency_difference_is_this = &ogn_extra_part[47..54];
+
+  let gps_accuracy = &ogn_extra_part[55..];
+
+  // assemble the message
   OgnMessage {
-    timestamp: DateTime::from_str("10:10:10").unwrap(),
-    position: Coordinate { x: 0.0, y: 1.1 },
-    ground_speed: 250.0,
-    ground_turning_rate: 1.0,
-    climb_rate: 2.5,
-    altitude: 1500,
-    ground_track: 160,
-    gps_accuracy: "gps4x5".to_string(),
+    // timestamp: DateTime::from_str(&aprs_part[1..7]).unwrap(),
+    position: Coordinate {
+      x: lat.parse().unwrap(),
+      y: lon.parse().unwrap(),
+    },
+    ground_speed: ground_speed.parse().unwrap(),
+    ground_turning_rate: ground_turning_rate.parse().unwrap(),
+    climb_rate: climb_rate_string[1..4].parse().unwrap(),
+    altitude: altitude_string[2..].parse().unwrap(),
+    ground_track: ground_track.parse().unwrap(),
+    gps_accuracy: gps_accuracy.to_string(),
+    id: id.to_string(),
   }
 }
 
@@ -371,7 +393,7 @@ mod tests {
     };
 
     let message = OgnMessage {
-      timestamp: DateTime::from_str("13:02:08").unwrap(),
+      timestamp: String::from("2021-08-22 13:02:08 UTC").parse().unwrap(),
       position: Coordinate {
         x: 54.4595,
         y: 001.1150,
@@ -382,6 +404,7 @@ mod tests {
       ground_turning_rate: -4.3,
       ground_track: 232,
       gps_accuracy: "gps3x5".to_string(),
+      id: "id3782149C".to_string(),
     };
 
     let expected = OgnTransmission {
