@@ -5,7 +5,7 @@ use log4rs::encode::pattern::PatternEncoder;
 
 use std::io::Error;
 
-use ogn_client_rs::{APRSClient, LoginData};
+use ogn_client_rs::{APRSClient, LoginData, PORT};
 
 fn main() -> Result<(), Error> {
   //configure loggers
@@ -16,24 +16,17 @@ fn main() -> Result<(), Error> {
   let config = Config::builder()
     .appender(Appender::builder().build("stdout", Box::new(stdout)))
     .logger(Logger::builder().build("ogn_client_rs", LevelFilter::Debug))
-    .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
+    .build(Root::builder().appender("stdout").build(LevelFilter::Warn))
     .unwrap();
 
   log4rs::init_config(config).unwrap();
 
-  let mut client = APRSClient::new("aprs.glidernet.org", 14580);
+  let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED);
 
-  // let login_message = String::from("user NOCALL pass -1");
-  // let response = client.send_message(&login_message)?;
-  // println!("{:?}", response);
-  let login_data = LoginData{
-    user_name: "beat",
-    pass_code: "", // TODO
-    app_name: "aprs-client-rs",
-    app_version: env!("CARGO_PKG_VERSION")
-  };
+  LoginData::new(None, None, None, None);
 
-  client.login()
+  // client.login_default()?;
+  // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();
 
   client.run();
 
