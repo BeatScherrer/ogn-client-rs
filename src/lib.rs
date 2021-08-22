@@ -11,6 +11,7 @@ TODO:
 - add send status
 - add filter functionality
 - replace String with &str where possible
+- Check for keep-alive messages or proper responses
 
 ##aprs-is notes:
 - constant information should only be sent every 5 minutes
@@ -105,15 +106,6 @@ struct OgnMessage {
   gps_accuracy: String,
   id: String,
 }
-
-// impl OgnMessage {
-//   pub fn new(timestamp: NaiveTime, position: Coordinate<f32>) -> Self {
-//     OgnMessage {
-//       timestamp: timestamp,
-//       position: position,
-//     }
-//   }
-// }
 
 impl Parse for OgnTransmission {
   type Item = Self;
