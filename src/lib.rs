@@ -35,7 +35,7 @@ the `Parse` trait which requires a `fn parse(transmission: &str) -> YourType`.
 */
 
 use chrono::prelude::*;
-use log::{debug, info, warn};
+use log::{debug, info};
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
 use std::str::FromStr;
@@ -95,7 +95,7 @@ impl OgnStatusMessage {
 // describes an ogn position
 #[derive(Debug, PartialEq)]
 struct OgnMessage {
-  timestamp: NaiveTime,
+  timestamp: DateTime<Utc>,
   position: Coordinate<f32>,
   ground_speed: f32,
   ground_turning_rate: f32,
@@ -124,10 +124,6 @@ impl Parse for OgnTransmission {
     let header = parse_header(splits[0]);
     let message = parse_message(splits[1]);
 
-    // second: split the header at '>' to get the source id
-
-    println!("####### {:#?} \n {:#?}", header, message);
-
     OgnTransmission {
       header: header,
       message: message,
@@ -148,7 +144,6 @@ fn parse_header(header: &str) -> OgnHeader {
     sender_id: sender_id.to_string(),
     receiver: receiver.to_string(),
     transmission_method: transmission_method.to_string(),
-    signal_strength: signal_strength.to_string(),
   }
 }
 
@@ -170,7 +165,7 @@ fn parse_message(message: &str) -> OgnMessage {
   }
 
   OgnMessage {
-    timestamp: NaiveTime::from_hms(10, 10, 10),
+    timestamp: DateTime::from_str("10:10:10").unwrap(),
     position: Coordinate { x: 0.0, y: 1.1 },
     ground_speed: 250.0,
     ground_turning_rate: 1.0,
@@ -186,7 +181,6 @@ struct OgnHeader {
   sender_id: String,
   receiver: String,
   transmission_method: String,
-  signal_strength: String,
 }
 
 enum OgnStatusField {
@@ -368,18 +362,35 @@ mod tests {
   fn parser_test() {
     // test message from ogn wiki, make sure this corresponds to the actual specifications
     let test_message = r#"OGN82149C>OGNTRK,qAS,OxfBarton:/130208h5145.95N/00111.50W'232/000/A=000295 !W33! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5"#;
+
     // create the expected output
-    // let expected = OgnMessage {
-    //   meta: OgnMetaData::new(),
-    //   timestamp: NaiveTime::parse_from_str("13:02:08", "%H:%M:%S").unwrap(),
-    //   position: Coordinate {
-    //     x: 51.4595,
-    //     y: 001.1150,
-    //   },
-    // };
+    let header = OgnHeader {
+      sender_id: "OGN82149C".to_string(),
+      receiver: "OGNTRK".to_string(),
+      transmission_method: "qAS".to_string(),
+    };
 
-    // let parsed_position = OgnMessage::parse(test_message);
+    let message = OgnMessage {
+      timestamp: DateTime::from_str("13:02:08").unwrap(),
+      position: Coordinate {
+        x: 54.4595,
+        y: 001.1150,
+      },
+      altitude: 0,
+      climb_rate: 0.0,
+      ground_speed: 0.0,
+      ground_turning_rate: -4.3,
+      ground_track: 232,
+      gps_accuracy: "gps3x5".to_string(),
+    };
 
-    // assert_eq!(expected, parsed_position);
+    let expected = OgnTransmission {
+      header: header,
+      message: message,
+    };
+
+    let parsed_position = OgnTransmission::parse(test_message);
+
+    assert_eq!(expected, parsed_position);
   }
 }
