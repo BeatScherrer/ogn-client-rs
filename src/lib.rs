@@ -129,9 +129,7 @@ fn parse_header(header: &str) -> OgnHeader {
   let sender_id = header_splits[0];
 
   let header_splits: Vec<&str> = header_splits[1].split(',').collect();
-  // for split in header_splits {
-  //   println!("header split: \n {:#?}", split);
-  // }
+
   let receiver = header_splits[0];
   let transmission_method = header_splits[1];
 
