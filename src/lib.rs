@@ -2,21 +2,43 @@
 #ogn-client-rs
 TODO:
 - restrict buffer to 512Bytes
-- add passcode generationo
+- add passcode generation
 - Check for login status before reading data
 - Move the Ogn Structures to seperate module
+- Make sure the lat/long conversion to coordinate is correct
+- finish parsing of the header
+- finish parsing of the message
+- add send status
+- add filter functionality
+- replace String with &str where possible
 
 ##aprs-is notes:
 - constant information should only be sent every 5 minutes
 [ogn-wiki](http://wiki.glidernet.org/aprs-interaction-examples)
 - After every 20s a heartbeat is sent from the server, try to reconnect
 after 1min of not receiving the heartbeat
+
+an example of a ogn message looks as follows:
+```
+OGN82149C>OGNTRK,qAS,OxfBarton:/130208h5145.95N/00111.50W'232/000/A=000295 !W33! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5
+```
+
+where the header `OGN82149C>OGNTRK,qAS,OxfBarton` and message `/130208h5145.95N/00111.50W'232/000/A=000295 !W33! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5`
+are seperated with a `:`. The fields until `!W33!` are pure APRS format and after are "comments" which carry ogn specific extra information
+
+therefore the default parser parses the message into a `OgnTransmission` struct which consists of `OgnHeader` and `OgnMessage`.
+
+The parser can be overriden but since it is a specified format the default parsers should do just fine. Conversions to
+other data structures can be don after parsing. When you want to parse directly into your data structure just implement
+the `Parse` trait which requires a `fn parse(transmission: &str) -> YourType`.
+
 */
 
+use chrono::prelude::*;
 use log::{debug, info, warn};
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
-use chrono::prelude::*;
+use std::str::FromStr;
 
 use geocoding::Coordinate;
 
@@ -28,7 +50,13 @@ pub trait Parse {
 }
 
 #[derive(Debug, PartialEq)]
-struct OgnMetaData {
+struct OgnTransmission {
+  header: OgnHeader,
+  message: OgnMessage,
+}
+
+#[derive(Debug, PartialEq)]
+struct OgnStatusMessage {
   m_pilot_name: Option<String>,
   m_manufacturer: Option<String>,
   m_model: Option<String>,
@@ -44,9 +72,9 @@ struct OgnMetaData {
   m_software: Option<String>,
 }
 
-impl OgnMetaData {
+impl OgnStatusMessage {
   pub fn new() -> Self {
-    OgnMetaData {
+    OgnStatusMessage {
       m_pilot_name: None,
       m_manufacturer: None,
       m_model: None,
@@ -66,28 +94,139 @@ impl OgnMetaData {
 
 // describes an ogn position
 #[derive(Debug, PartialEq)]
-struct OgnPosition {
-  meta: OgnMetaData,
-  timestamp: DateTime<Utc>,
+struct OgnMessage {
+  timestamp: NaiveTime,
   position: Coordinate<f32>,
+  ground_speed: f32,
+  ground_turning_rate: f32,
+  climb_rate: f32,
+  altitude: u32,
+  ground_track: u16,
+  gps_accuracy: String,
 }
 
-impl OgnPosition {
-  pub fn new(timestamp: DateTime<Utc>, position: Coordinate<f32>) -> Self {
-    OgnPosition{
-      meta: OgnMetaData::new(),
-      timestamp: timestamp,
-      position: position
+// impl OgnMessage {
+//   pub fn new(timestamp: NaiveTime, position: Coordinate<f32>) -> Self {
+//     OgnMessage {
+//       timestamp: timestamp,
+//       position: position,
+//     }
+//   }
+// }
+
+impl Parse for OgnTransmission {
+  type Item = Self;
+
+  fn parse(message: &str) -> Self {
+    // first: split at ':' to split the header from the message
+    let mut splits: Vec<&str> = message.split(':').collect();
+
+    let header = parse_header(splits[0]);
+    let message = parse_message(splits[1]);
+
+    // second: split the header at '>' to get the source id
+
+    println!("####### {:#?} \n {:#?}", header, message);
+
+    OgnTransmission {
+      header: header,
+      message: message,
     }
   }
 }
 
+fn parse_header(header: &str) -> OgnHeader {
+  let header_splits: Vec<&str> = header.split('>').collect();
+  let sender_id = header_splits[0];
 
-impl Parse for OgnPosition {
-  type Item = Self;
+  let header_splits: Vec<&str> = header_splits[0].split(',').collect();
+  let receiver = header_splits[0];
+  let transmission_method = header_splits[1];
+  let signal_strength = header_splits[2];
 
-  fn parse(message: &str) -> Self {
-    OgnPosition::new(Utc::now(), Coordinate{x: 45.0, y: 13.0})
+  OgnHeader {
+    sender_id: sender_id.to_string(),
+    receiver: receiver.to_string(),
+    transmission_method: transmission_method.to_string(),
+    signal_strength: signal_strength.to_string(),
+  }
+}
+
+fn parse_message(message: &str) -> OgnMessage {
+  // first split the message at the extra field separator
+  let splits: Vec<&str> = message.split("!W66").collect();
+
+  let aprs_part = splits[0];
+  let ogn_extra_part = splits[1];
+
+  // split at / to get the main aprs fields
+  let aprs_splits: Vec<&str> = aprs_part.split('/').collect();
+
+  //
+  let extra_ogn_splits: Vec<&str> = ogn_extra_part.split('!').collect();
+
+  for field in extra_ogn_splits {
+    println!("{:#?}", field);
+  }
+
+  OgnMessage {
+    timestamp: NaiveTime::from_hms(10, 10, 10),
+    position: Coordinate { x: 0.0, y: 1.1 },
+    ground_speed: 250.0,
+    ground_turning_rate: 1.0,
+    climb_rate: 2.5,
+    altitude: 1500,
+    ground_track: 160,
+    gps_accuracy: "gps4x5".to_string(),
+  }
+}
+
+#[derive(Debug, PartialEq)]
+struct OgnHeader {
+  sender_id: String,
+  receiver: String,
+  transmission_method: String,
+  signal_strength: String,
+}
+
+enum OgnStatusField {
+  PilotName,
+  Manuf,
+  Model,
+  Type,
+  SerialNumber,
+  Registration,
+  CompetitionId,
+  CompetitionClass,
+  CompetitionTask,
+  BaseAirfield,
+  InCaseOfEmergency,
+  PilotId,
+  Hardware,
+  Software,
+}
+
+impl FromStr for OgnStatusField {
+  type Err = ();
+
+  fn from_str(input: &str) -> Result<OgnStatusField, Self::Err> {
+    match input {
+      "Pilot" => Ok(OgnStatusField::PilotName),
+      "Manuf" => Ok(OgnStatusField::Manuf),
+      "Model" => Ok(OgnStatusField::Model),
+      "Type" => Ok(OgnStatusField::Type),
+      "SN" => Ok(OgnStatusField::SerialNumber),
+      "Reg" => Ok(OgnStatusField::Registration),
+      "ID" => Ok(OgnStatusField::CompetitionId),
+      "Class" => Ok(OgnStatusField::CompetitionClass),
+      "Task" => Ok(OgnStatusField::CompetitionTask),
+      "Base" => Ok(OgnStatusField::BaseAirfield),
+      "ICE" => Ok(OgnStatusField::InCaseOfEmergency),
+      "PilotID" => Ok(OgnStatusField::PilotId),
+      "Hard" => Ok(OgnStatusField::Hardware),
+      "Soft" => Ok(OgnStatusField::Software),
+      _ => Err(()),
+    }
   }
 }
 
@@ -96,7 +235,6 @@ pub enum PORT {
   FULLFEED = 10152,
   FILTER = 14580,
 }
-
 
 pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
@@ -231,14 +369,17 @@ mod tests {
     // test message from ogn wiki, make sure this corresponds to the actual specifications
     let test_message = r#"OGN82149C>OGNTRK,qAS,OxfBarton:/130208h5145.95N/00111.50W'232/000/A=000295 !W33! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5"#;
     // create the expected output
-    let expected = OgnPosition{
-      meta: OgnMetaData::new(),
-      timestamp: DateTime<Utc>::parse_from_str("13:02:08", "%H:%M:%S").unwrap(),
-      position: Coordinate{x: 51.4595, y: 001.1150}
-    };
+    // let expected = OgnMessage {
+    //   meta: OgnMetaData::new(),
+    //   timestamp: NaiveTime::parse_from_str("13:02:08", "%H:%M:%S").unwrap(),
+    //   position: Coordinate {
+    //     x: 51.4595,
+    //     y: 001.1150,
+    //   },
+    // };
 
-    let parsed_position = OgnPosition::parse(test_message);
+    // let parsed_position = OgnMessage::parse(test_message);
 
-    assert_eq!(expected, parsed_position);
+    // assert_eq!(expected, parsed_position);
   }
 }
