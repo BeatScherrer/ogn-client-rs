@@ -101,7 +101,7 @@ struct OgnMessage {
   ground_speed: f32,
   ground_turning_rate: f32,
   climb_rate: f32,
-  altitude: u32,
+  altitude: f32,
   ground_track: u16,
   gps_accuracy: String,
   id: String,
@@ -150,8 +150,7 @@ fn parse_message(message: &str) -> OgnMessage {
   let aprs_part = splits[0];
   let ogn_extra_part = splits[1];
 
-  // let aprs_part_bytes = vec![0; 512]
-  // let aprs_part_bytes = aprs_part.as_bytes().to_vec();
+  let time_string = &aprs_part[1..7];
 
   let lat = &aprs_part[8..15].replace(".", "");
   let lon = &aprs_part[17..25].replace(".", "");
@@ -175,7 +174,11 @@ fn parse_message(message: &str) -> OgnMessage {
 
   // assemble the message
   OgnMessage {
-    // timestamp: DateTime::from_str(&aprs_part[1..7]).unwrap(),
+    timestamp: Utc.ymd(2021, 8, 22).and_hms(
+      time_string[0..1].parse().unwrap(),
+      time_string[2..3].parse().unwrap(),
+      time_string[4..].parse().unwrap(),
+    ),
     position: Coordinate {
       x: lat.parse().unwrap(),
       y: lon.parse().unwrap(),
@@ -385,12 +388,12 @@ mod tests {
     };
 
     let message = OgnMessage {
-      timestamp: String::from("2021-08-22 13:02:08 UTC").parse().unwrap(),
+      timestamp: Utc.ymd(2021, 08, 22).and_hms(13, 02, 08),
       position: Coordinate {
         x: 54.4595,
         y: 001.1150,
       },
-      altitude: 0,
+      altitude: 0.0,
       climb_rate: 0.0,
       ground_speed: 0.0,
       ground_turning_rate: -4.3,
