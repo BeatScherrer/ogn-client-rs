@@ -6,12 +6,11 @@ TODO:
 - Check for login status before reading data
 - Move the Ogn Structures to seperate module
 - Make sure the lat/long conversion to coordinate is correct
-- finish parsing of the header
-- finish parsing of the message
 - add send status
 - add filter functionality
 - replace String with &str where possible
 - Check for keep-alive messages or proper responses
+- Add support for other parsers
 
 ##aprs-is notes:
 - constant information should only be sent every 5 minutes
