@@ -160,7 +160,7 @@ fn parse_message(message: &str) -> OgnMessage {
 
   let id = &ogn_extra_part[1..11];
   let climb_rate_string = &ogn_extra_part[12..20];
-  let ground_turning_rate = &ogn_extra_part[21..24];
+  let ground_turning_rate = &ogn_extra_part[20..24];
   let altitude_string = &ogn_extra_part[28..36];
 
   // What are these fields supposed to contain?
@@ -183,7 +183,7 @@ fn parse_message(message: &str) -> OgnMessage {
     },
     ground_speed: ground_speed.parse().unwrap(),
     ground_turning_rate: ground_turning_rate.parse().unwrap(),
-    climb_rate: climb_rate_string[1..4].parse().unwrap(),
+    climb_rate: climb_rate_string[0..4].parse().unwrap(),
     altitude: altitude_string[2..].parse().unwrap(),
     ground_track: ground_track.parse().unwrap(),
     gps_accuracy: gps_accuracy.to_string(),
@@ -388,7 +388,7 @@ mod tests {
     let message = OgnMessage {
       timestamp: Utc.ymd(2021, 08, 22).and_hms(13, 02, 08),
       position: Coordinate {
-        x: 54.4595,
+        x: 51.4595,
         y: 001.1150,
       },
       altitude: 0.0,
