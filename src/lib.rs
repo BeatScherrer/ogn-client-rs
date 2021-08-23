@@ -173,13 +173,13 @@ fn parse_message(message: &str) -> OgnMessage {
   // assemble the message
   OgnMessage {
     timestamp: Utc.ymd(2021, 8, 22).and_hms(
-      time_string[0..1].parse().unwrap(),
-      time_string[2..3].parse().unwrap(),
-      time_string[4..].parse().unwrap(),
+      time_string[0..2].parse().unwrap(),
+      time_string[2..4].parse().unwrap(),
+      time_string[5..].parse().unwrap(),
     ),
     position: Coordinate {
-      x: lat.parse().unwrap(),
-      y: lon.parse().unwrap(),
+      x: lat.parse::<f32>().unwrap() / 10000.0,
+      y: lon.parse::<f32>().unwrap() / 10000.0,
     },
     ground_speed: ground_speed.parse().unwrap(),
     ground_turning_rate: ground_turning_rate.parse().unwrap(),
