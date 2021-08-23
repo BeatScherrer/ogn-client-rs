@@ -1,5 +1,5 @@
 # ogn-client-rs
-![v0.1.0](https://github.com/BeatScherrer/ogn-client-rs/actions/workflows/rust.yml/badge.svg)
+![develop](https://github.com/BeatScherrer/ogn-client-rs/actions/workflows/rust.yml/badge.svg?branch=develop)
 
 
 TODO add description
