@@ -1,29 +1,10 @@
 use log::{debug, info};
+use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
 
 mod parser;
 use parser::Parse;
-
-// impl OgnStatusMessage {
-// pub fn new() -> Self {
-//   OgnStatusMessage {
-//     m_pilot_name: None,
-//     m_manufacturer: None,
-//     m_model: None,
-//     m_type: None,
-//     m_serial_number: None,
-//     m_competition_id: None,
-//     m_competition_class: None,
-//     m_competition_task: None,
-//     m_base_airfield: None,
-//     m_in_case_of_emergency: None,
-//     m_pilot_id: None,
-//     m_hardware: None,
-//     m_software: None,
-//   }
-// }
-// }
 
 #[repr(u16)]
 pub enum PORT {
@@ -31,14 +12,20 @@ pub enum PORT {
   FILTER = 14580,
 }
 
-pub struct APRSClient {
+pub struct APRSClient<T>
+where
+  T: Parse + Debug,
+{
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
-  // m_parser: Box<dyn Parse>,
+  m_data: T,
 }
 
-impl APRSClient {
-  pub fn new(target: &str, port: PORT) -> Self {
+impl<T> APRSClient<T>
+where
+  T: Parse + Debug,
+{
+  pub fn new(target: &str, port: PORT, data: T) -> Self {
     // ip addr
     let port = port as u16;
     info!("creating aprs client with target '{}:{}'", target, port);
@@ -48,16 +35,15 @@ impl APRSClient {
     APRSClient {
       m_writer: LineWriter::new(connection.try_clone().unwrap()),
       m_reader: BufReader::new(connection), // m_buffer: &mut[0; 128],
+      m_data: data,
     }
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
     info!("login with following data:\n{:#?}", &login_data);
-    let login_message = APRSClient::create_aprs_login(login_data);
+    let login_message = APRSClient::<T>::create_aprs_login(login_data);
 
     self.send_message(login_message.as_str())?;
-
-    // read
 
     Ok(())
   }
@@ -79,7 +65,11 @@ impl APRSClient {
     println!("{}", self.read().unwrap());
 
     loop {
-      println!("{}", self.read().unwrap());
+      // parse the read message
+      let message = self.read().unwrap();
+      let test = T::parse(&message);
+
+      println!("{:#?}", test);
     }
   }
 
@@ -116,7 +106,10 @@ impl APRSClient {
   }
 }
 
-impl Drop for APRSClient {
+impl<T> Drop for APRSClient<T>
+where
+  T: Parse + Debug,
+{
   fn drop(&mut self) {
     info!("...terminating the aprs client!");
   }

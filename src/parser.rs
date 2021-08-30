@@ -1,39 +1,28 @@
 use chrono::prelude::*;
 use geocoding::Coordinate;
-use std::str::FromStr;
+use std::fmt::Debug;
 
 pub trait Parse {
-  type Item;
+  type Item: Debug;
 
   fn parse(string: &str) -> Self::Item;
 }
 
 #[derive(Debug, PartialEq)]
-struct OgnTransmission {
-  header: OgnHeader,
-  message: OgnMessage,
+pub struct OgnTransmission {
+  pub header: OgnHeader,
+  pub message: OgnMessage,
 }
 
 #[derive(Debug, PartialEq)]
-struct OgnStatusMessage {
-  m_pilot_name: Option<String>,
-  m_manufacturer: Option<String>,
-  m_model: Option<String>,
-  m_type: Option<String>,
-  m_serial_number: Option<u32>,
-  m_competition_id: Option<String>,
-  m_competition_class: Option<String>,
-  m_competition_task: Option<String>,
-  m_base_airfield: Option<String>,
-  m_in_case_of_emergency: Option<String>,
-  m_pilot_id: Option<String>,
-  m_hardware: Option<String>,
-  m_software: Option<String>,
+pub struct OgnHeader {
+  sender_id: String,
+  receiver: String,
+  transmission_method: String,
 }
 
-// describes an ogn position
 #[derive(Debug, PartialEq)]
-struct OgnMessage {
+pub struct OgnMessage {
   timestamp: DateTime<Utc>,
   position: Coordinate<f32>,
   ground_speed: f32,
@@ -60,6 +49,23 @@ impl Parse for OgnTransmission {
       message: message,
     }
   }
+}
+
+#[derive(Debug, PartialEq)]
+struct OgnStatusMessage {
+  m_pilot_name: Option<String>,
+  m_manufacturer: Option<String>,
+  m_model: Option<String>,
+  m_type: Option<String>,
+  m_serial_number: Option<u32>,
+  m_competition_id: Option<String>,
+  m_competition_class: Option<String>,
+  m_competition_task: Option<String>,
+  m_base_airfield: Option<String>,
+  m_in_case_of_emergency: Option<String>,
+  m_pilot_id: Option<String>,
+  m_hardware: Option<String>,
+  m_software: Option<String>,
 }
 
 fn parse_header(header: &str) -> OgnHeader {
@@ -129,53 +135,46 @@ fn parse_message(message: &str) -> OgnMessage {
   }
 }
 
-#[derive(Debug, PartialEq)]
-struct OgnHeader {
-  sender_id: String,
-  receiver: String,
-  transmission_method: String,
-}
+// enum OgnStatusField {
+//   PilotName,
+//   Manuf,
+//   Model,
+//   Type,
+//   SerialNumber,
+//   Registration,
+//   CompetitionId,
+//   CompetitionClass,
+//   CompetitionTask,
+//   BaseAirfield,
+//   InCaseOfEmergency,
+//   PilotId,
+//   Hardware,
+//   Software,
+// }
 
-enum OgnStatusField {
-  PilotName,
-  Manuf,
-  Model,
-  Type,
-  SerialNumber,
-  Registration,
-  CompetitionId,
-  CompetitionClass,
-  CompetitionTask,
-  BaseAirfield,
-  InCaseOfEmergency,
-  PilotId,
-  Hardware,
-  Software,
-}
+// impl FromStr for OgnStatusField {
+//   type Err = ();
 
-impl FromStr for OgnStatusField {
-  type Err = ();
-
-  fn from_str(input: &str) -> Result<OgnStatusField, Self::Err> {
-    match input {
-      "Pilot" => Ok(OgnStatusField::PilotName),
-      "Manuf" => Ok(OgnStatusField::Manuf),
-      "Model" => Ok(OgnStatusField::Model),
-      "Type" => Ok(OgnStatusField::Type),
-      "SN" => Ok(OgnStatusField::SerialNumber),
-      "Reg" => Ok(OgnStatusField::Registration),
-      "ID" => Ok(OgnStatusField::CompetitionId),
-      "Class" => Ok(OgnStatusField::CompetitionClass),
-      "Task" => Ok(OgnStatusField::CompetitionTask),
-      "Base" => Ok(OgnStatusField::BaseAirfield),
-      "ICE" => Ok(OgnStatusField::InCaseOfEmergency),
-      "PilotID" => Ok(OgnStatusField::PilotId),
-      "Hard" => Ok(OgnStatusField::Hardware),
-      "Soft" => Ok(OgnStatusField::Software),
-      _ => Err(()),
-    }
-  }
-}
+//   fn from_str(input: &str) -> Result<OgnStatusField, Self::Err> {
+//     match input {
+//       "Pilot" => Ok(OgnStatusField::PilotName),
+//       "Manuf" => Ok(OgnStatusField::Manuf),
+//       "Model" => Ok(OgnStatusField::Model),
+//       "Type" => Ok(OgnStatusField::Type),
+//       "SN" => Ok(OgnStatusField::SerialNumber),
+//       "Reg" => Ok(OgnStatusField::Registration),
+//       "ID" => Ok(OgnStatusField::CompetitionId),
+//       "Class" => Ok(OgnStatusField::CompetitionClass),
+//       "Task" => Ok(OgnStatusField::CompetitionTask),
+//       "Base" => Ok(OgnStatusField::BaseAirfield),
+//       "ICE" => Ok(OgnStatusField::InCaseOfEmergency),
+//       "PilotID" => Ok(OgnStatusField::PilotId),
+//       "Hard" => Ok(OgnStatusField::Hardware),
+//       "Soft" => Ok(OgnStatusField::Software),
+//       _ => Err(()),
+//     }
+//   }
+// }
 
 #[cfg(test)]
 mod tests {

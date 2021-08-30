@@ -6,6 +6,8 @@ use log4rs::encode::pattern::PatternEncoder;
 use std::io::Error;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
+mod parser;
+use parser::OgnTransmission;
 
 fn main() -> Result<(), Error> {
   //configure loggers
