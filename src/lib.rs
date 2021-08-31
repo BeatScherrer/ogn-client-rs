@@ -12,20 +12,14 @@ pub enum PORT {
   FILTER = 14580,
 }
 
-pub struct APRSClient<T>
-where
-  T: Parse + Debug,
-{
+pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
-  m_data: T,
+  m_data_object: Option<parser::OgnTransmission>,
 }
 
-impl<T> APRSClient<T>
-where
-  T: Parse + Debug,
-{
-  pub fn new(target: &str, port: PORT, data: T) -> Self {
+impl APRSClient {
+  pub fn new(target: &str, port: PORT) -> Self {
     // ip addr
     let port = port as u16;
     info!("creating aprs client with target '{}:{}'", target, port);
@@ -34,14 +28,14 @@ where
 
     APRSClient {
       m_writer: LineWriter::new(connection.try_clone().unwrap()),
-      m_reader: BufReader::new(connection), // m_buffer: &mut[0; 128],
-      m_data: data,
+      m_reader: BufReader::new(connection),
+      m_data_object: None,
     }
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
     info!("login with following data:\n{:#?}", &login_data);
-    let login_message = APRSClient::<T>::create_aprs_login(login_data);
+    let login_message = APRSClient::create_aprs_login(login_data);
 
     self.send_message(login_message.as_str())?;
 
@@ -49,7 +43,7 @@ where
   }
 
   pub fn login_default(&mut self) -> Result<(), std::io::Error> {
-    let login_data = LoginData::new(None, None, None, None);
+    let login_data = LoginData::new();
     self.login(login_data)?;
 
     Ok(())
@@ -59,17 +53,15 @@ where
     info!("starting the client...");
     println!("a {}", self.read().unwrap());
 
-    self
-      .send_message("user BEAT pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50\r\n")
-      .unwrap();
+    self.send_message("user NOCALL pass -1").unwrap();
     println!("{}", self.read().unwrap());
 
     loop {
       // parse the read message
       let message = self.read().unwrap();
-      let test = T::parse(&message);
+      self.m_data_object = Some(parser::OgnTransmission::parse(&message));
 
-      println!("{:#?}", test);
+      println!("{:#?}", self.m_data_object);
     }
   }
 
@@ -106,10 +98,7 @@ where
   }
 }
 
-impl<T> Drop for APRSClient<T>
-where
-  T: Parse + Debug,
-{
+impl Drop for APRSClient {
   fn drop(&mut self) {
     info!("...terminating the aprs client!");
   }
