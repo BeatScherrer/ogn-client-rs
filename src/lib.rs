@@ -34,32 +34,27 @@ impl APRSClient {
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
-    info!("login with following data:\n{:#?}", &login_data);
+    info!("login with following data: {:?}", &login_data);
+
     let login_message = APRSClient::create_aprs_login(login_data);
 
     self.send_message(login_message.as_str())?;
+    println!("login answer:  {}", self.read().unwrap());
 
     Ok(())
   }
 
   pub fn login_default(&mut self) -> Result<(), std::io::Error> {
-    let login_data = LoginData::new();
-    self.login(login_data)?;
-
-    Ok(())
+    self.login(LoginData::new())
   }
 
   pub fn run(&mut self) {
     info!("starting the client...");
-    println!("a {}", self.read().unwrap());
-
-    self.send_message("user NOCALL pass -1").unwrap();
-    println!("{}", self.read().unwrap());
 
     loop {
       // parse the read message
       let message = self.read().unwrap();
-      self.m_data_object = Some(parser::OgnTransmission::parse(&message));
+      // self.m_data_object = Some(parser::OgnTransmission::parse(&message).unwrap());
 
       println!("{:#?}", self.m_data_object);
     }
@@ -92,7 +87,7 @@ impl APRSClient {
 
   fn create_aprs_login(login_data: LoginData) -> String {
     format!(
-      "user {} pass {} vers {} {} filter r/33.25/-96.5/50",
+      "user {} pass {} vers {} {}",
       login_data.user_name, login_data.pass_code, login_data.app_name, login_data.app_version
     )
   }

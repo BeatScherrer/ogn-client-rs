@@ -23,9 +23,9 @@ fn main() -> Result<(), Error> {
 
   let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED);
 
-  // LoginData::new(None, None, None, None);
   let login_data = LoginData::new().user_name("Beat");
-  println!("{:?}", login_data);
+
+  client.login(login_data)?;
 
   // client.login_default()?;
   // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();

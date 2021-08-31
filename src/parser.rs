@@ -1,11 +1,12 @@
 use chrono::prelude::*;
 use geocoding::Coordinate;
+use log::debug;
 use std::fmt::Debug;
 
 pub trait Parse {
   type Item: Debug;
 
-  fn parse(string: &str) -> Self::Item;
+  fn parse(string: &str) -> Option<Self::Item>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -37,17 +38,22 @@ pub struct OgnMessage {
 impl Parse for OgnTransmission {
   type Item = Self;
 
-  fn parse(message: &str) -> Self {
+  fn parse(message: &str) -> Option<Self> {
+    if message.starts_with("#") {
+      debug!("message is a server status message, skipping...");
+      return None;
+    }
+
     // first: split at ':' to split the header from the message
     let splits: Vec<&str> = message.split(':').collect();
 
     let header = parse_header(splits[0]);
     let message = parse_message(splits[1]);
 
-    OgnTransmission {
+    Some(OgnTransmission {
       header: header,
       message: message,
-    }
+    })
   }
 }
 
@@ -86,6 +92,13 @@ fn parse_header(header: &str) -> OgnHeader {
 
 // TODO proper error handling
 fn parse_message(message: &str) -> OgnMessage {
+  debug!("{:#?}", message);
+
+  // check if the messsage is valid and can be parsed
+  if message.starts_with("#") {
+    println!("starts with #");
+  }
+
   // first split the message at the extra field separator
   let splits: Vec<&str> = message.split("!W33!").collect();
 
