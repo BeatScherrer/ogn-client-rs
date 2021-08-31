@@ -113,17 +113,36 @@ pub struct LoginData<'a> {
 }
 
 impl<'a> LoginData<'a> {
-  pub fn new(
-    mut user_name: Option<&'a str>,
-    mut pass_code: Option<&'a str>,
-    mut app_name: Option<&'a str>,
-    mut app_version: Option<&'a str>,
-  ) -> LoginData<'a> {
+  pub fn new() -> LoginData<'a> {
     Self {
-      user_name: user_name.get_or_insert("BEAT"),
-      pass_code: pass_code.get_or_insert("-1"),
-      app_name: app_name.get_or_insert(env!("CARGO_PKG_NAME")),
-      app_version: app_version.get_or_insert(env!("CARGO_PKG_VERSION")),
+      user_name: "NOCALL",
+      pass_code: "-1",
+      app_name: env!("CARGO_PKG_NAME"),
+      app_version: env!("CARGO_PKG_VERSION"),
     }
+  }
+
+  pub fn user_name(mut self, user_name: &'a str) -> LoginData<'a> {
+    self.user_name = user_name;
+    self
+  }
+
+  pub fn pass_code(mut self, pass_code: &'a str) -> LoginData<'a> {
+    self.pass_code = pass_code;
+    self
+  }
+
+  pub fn app_name(mut self, app_name: &'a str) -> LoginData<'a> {
+    self.app_name = app_name;
+    self
+  }
+
+  pub fn app_version(mut self, app_version: &'a str) -> LoginData<'a> {
+    self.app_version = app_version;
+    self
+  }
+
+  pub fn build(&mut self) -> &mut LoginData<'a> {
+    self
   }
 }

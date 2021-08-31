@@ -6,8 +6,6 @@ use log4rs::encode::pattern::PatternEncoder;
 use std::io::Error;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
-mod parser;
-use parser::OgnTransmission;
 
 fn main() -> Result<(), Error> {
   //configure loggers
@@ -25,7 +23,9 @@ fn main() -> Result<(), Error> {
 
   let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED);
 
-  LoginData::new(None, None, None, None);
+  // LoginData::new(None, None, None, None);
+  let login_data = LoginData::new().user_name("Beat");
+  println!("{:?}", login_data);
 
   // client.login_default()?;
   // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();
