@@ -33,13 +33,12 @@ the `Parse` trait which requires a `fn parse(transmission: &str) -> YourType`.
 
 
 ## TODO:
-- restrict buffer to 512Bytes
 - add passcode generation
 - Check for login status before reading data
 - Move the Ogn Structures to seperate module
 - Make sure the lat/long conversion to coordinate is correct
 - add send status
-- add filter functionality
+- add dynamic filter functionality
 - replace String with &str where possible
 - Check for keep-alive messages or proper responses
 - Add support for other parsers

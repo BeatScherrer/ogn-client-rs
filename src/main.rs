@@ -27,7 +27,6 @@ fn main() -> Result<(), Error> {
 
   client.login(login_data)?;
 
-  // client.login_default()?;
   // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();
 
   client.run();
