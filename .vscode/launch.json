@@ -7,16 +7,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'ogn-client-rs'",
+      "name": "Debug unit tests in library 'ogn_client_rs'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
           "--lib",
-          "--package=ogn-client-rs"
+          "--package=ogn_client_rs"
         ],
         "filter": {
-          "name": "ogn-client-rs",
+          "name": "ogn_client_rs",
           "kind": "lib"
         }
       },
@@ -26,15 +26,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'ogn-client-rs'",
+      "name": "Debug executable 'ogn_client_rs'",
       "cargo": {
         "args": [
           "build",
-          "--bin=ogn-client-rs",
-          "--package=ogn-client-rs"
+          "--bin=ogn_client_rs",
+          "--package=ogn_client_rs"
         ],
         "filter": {
-          "name": "ogn-client-rs",
+          "name": "ogn_client_rs",
           "kind": "bin"
         }
       },
@@ -44,16 +44,16 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'ogn-client-rs'",
+      "name": "Debug unit tests in executable 'ogn_client_rs'",
       "cargo": {
         "args": [
           "test",
           "--no-run",
-          "--bin=ogn-client-rs",
-          "--package=ogn-client-rs"
+          "--bin=ogn_client_rs",
+          "--package=ogn_client_rs"
         ],
         "filter": {
-          "name": "ogn-client-rs",
+          "name": "ogn_client_rs",
           "kind": "bin"
         }
       },
