@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use geocoding::Coordinate;
-use log::debug;
+use log::{debug, info};
+use regex::Regex;
 use std::fmt::Debug;
 
 pub trait Parse {
@@ -40,7 +41,6 @@ impl Parse for OgnTransmission {
 
   fn parse(message: &str) -> Option<Self> {
     if message.starts_with("#") {
-      debug!("message is a server status message, skipping...");
       return None;
     }
 
@@ -90,17 +90,26 @@ fn parse_header(header: &str) -> OgnHeader {
   }
 }
 
-// TODO proper error handling
 fn parse_message(message: &str) -> OgnMessage {
   debug!("{:#?}", message);
 
-  // check if the messsage is valid and can be parsed
-  if message.starts_with("#") {
-    println!("starts with #");
+  // first split the message at the extra field separator
+  let regex = Regex::new("!W[0-9]+!").expect("bad regex");
+  let splits: Vec<&str> = regex.split(&message).collect();
+
+  for &split in &splits {
+    println!("## {}", &split);
   }
 
-  // first split the message at the extra field separator
-  let splits: Vec<&str> = message.split("!W33!").collect();
+  /*
+  TODO support variable length parsing of extra fields:
+  The fields are not always present. Therefore a dynamic splits must be applied.
+    - Split second split again at ' '
+    - Add field description, is the order always given or must the field type
+      be detected dynamically??
+    - Use regex to match the types:
+      - Add map with field types and regex patterns
+  */
 
   let aprs_part = splits[0];
   let ogn_extra_part = splits[1];
@@ -112,8 +121,6 @@ fn parse_message(message: &str) -> OgnMessage {
 
   let ground_track = &aprs_part[27..30];
   let ground_speed = &aprs_part[31..34];
-
-  // println!("#####################  {:#?}", lat);
 
   let id = &ogn_extra_part[1..11];
   let climb_rate_string = &ogn_extra_part[12..20];
@@ -225,7 +232,7 @@ mod tests {
       message: message,
     };
 
-    let parsed_position = OgnTransmission::parse(test_message);
+    let parsed_position = OgnTransmission::parse(test_message).unwrap();
 
     assert_eq!(expected, parsed_position);
   }

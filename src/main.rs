@@ -16,7 +16,7 @@ fn main() -> Result<(), Error> {
   let config = Config::builder()
     .appender(Appender::builder().build("stdout", Box::new(stdout)))
     .logger(Logger::builder().build("ogn_client_rs", LevelFilter::Debug))
-    .build(Root::builder().appender("stdout").build(LevelFilter::Warn))
+    .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
     .unwrap();
 
   log4rs::init_config(config).unwrap();

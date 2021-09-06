@@ -39,7 +39,7 @@ impl APRSClient {
     let login_message = APRSClient::create_aprs_login(login_data);
 
     self.send_message(login_message.as_str())?;
-    println!("login answer:  {}", self.read().unwrap());
+    info!("login answer:  {}", self.read()?);
 
     Ok(())
   }
@@ -54,9 +54,15 @@ impl APRSClient {
     loop {
       // parse the read message
       let message = self.read().unwrap();
-      // self.m_data_object = Some(parser::OgnTransmission::parse(&message).unwrap());
 
-      println!("{:#?}", self.m_data_object);
+      match parser::OgnTransmission::parse(&message) {
+        None => {
+          debug!("Server status message received: \n {:#?}", &message);
+        }
+        Some(_) => {
+          info!("{:#?}", &message);
+        }
+      }
     }
   }
 
