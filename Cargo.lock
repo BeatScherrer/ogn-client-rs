@@ -651,6 +651,7 @@ dependencies = [
  "geocoding",
  "log",
  "log4rs",
+ "regex",
 ]
 
 [[package]]
