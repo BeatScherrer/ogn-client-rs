@@ -82,6 +82,13 @@ impl APRSClient {
     self.send_message("#keepalive").unwrap();
   }
 
+  pub fn set_filter(&mut self, filter_expression: &str) {
+    debug!("applying filter: '{}'", filter_expression);
+    self
+      .send_message(&format!("#filter {}", filter_expression))
+      .unwrap();
+  }
+
   fn read(&mut self) -> Result<String, std::io::Error> {
     let mut string_buffer = String::new();
 
@@ -116,7 +123,7 @@ pub struct LoginData<'a> {
 impl<'a> LoginData<'a> {
   pub fn new() -> LoginData<'a> {
     Self {
-      user_name: "NOCALL",
+      user_name: "N0CALL",
       pass_code: "-1",
       app_name: env!("CARGO_PKG_NAME"),
       app_version: env!("CARGO_PKG_VERSION"),
