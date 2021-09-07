@@ -21,7 +21,11 @@ fn main() -> Result<(), Error> {
 
   log4rs::init_config(config).unwrap();
 
-  let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED);
+  let callback = |message: &str| {
+    println!("callback: {}", message);
+  };
+
+  let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED, Box::new(callback));
 
   let login_data = LoginData::new().user_name("Beat");
 

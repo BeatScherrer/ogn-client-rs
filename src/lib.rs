@@ -3,9 +3,6 @@ use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
 
-mod parser;
-use parser::Parse;
-
 #[repr(u16)]
 pub enum PORT {
   FULLFEED = 10152,
@@ -15,11 +12,11 @@ pub enum PORT {
 pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
-  m_data_object: Option<parser::OgnTransmission>,
+  m_callback: Box<dyn Fn(&str)>,
 }
 
 impl APRSClient {
-  pub fn new(target: &str, port: PORT) -> Self {
+  pub fn new(target: &str, port: PORT, callback: Box<dyn Fn(&str)>) -> Self {
     // ip addr
     let port = port as u16;
     info!("creating aprs client with target '{}:{}'", target, port);
@@ -29,7 +26,7 @@ impl APRSClient {
     APRSClient {
       m_writer: LineWriter::new(connection.try_clone().unwrap()),
       m_reader: BufReader::new(connection),
-      m_data_object: None,
+      m_callback: callback,
     }
   }
 
@@ -52,17 +49,9 @@ impl APRSClient {
     info!("starting the client...");
 
     loop {
-      // parse the read message
+      // read the message and pass it to the callback
       let message = self.read().unwrap();
-
-      match parser::OgnTransmission::parse(&message) {
-        None => {
-          debug!("Server status message received: \n {:#?}", &message);
-        }
-        Some(_) => {
-          info!("{:#?}", &message);
-        }
-      }
+      (self.m_callback)(&message);
     }
   }
 
