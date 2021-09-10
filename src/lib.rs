@@ -16,6 +16,7 @@ pub struct APRSClient {
   m_writer: LineWriter<TcpStream>,
   m_callback: Box<dyn Fn(&str) + Send>,
   m_thread: Option<std::thread::JoinHandle<()>>,
+  m_terminate: bool,
 }
 
 impl APRSClient {
@@ -31,6 +32,7 @@ impl APRSClient {
       m_reader: BufReader::new(connection),
       m_callback: callback,
       m_thread: None,
+      m_terminate: false,
     }));
 
     APRSClient::run(client.clone());
@@ -60,8 +62,13 @@ impl APRSClient {
 
     this.lock().unwrap().m_thread = Some(std::thread::spawn(move || {
       // read the message and pass it to the callback
-      let message = clone.lock().unwrap().read().unwrap();
-      (clone.lock().unwrap().m_callback)(&message);
+      let mut lock = clone.lock().unwrap();
+
+      while !lock.m_terminate {
+        println!("a {}", lock.m_terminate);
+        let message = lock.read().unwrap();
+        (lock.m_callback)(&message);
+      }
     }));
   }
 
@@ -108,6 +115,9 @@ impl APRSClient {
 impl Drop for APRSClient {
   fn drop(&mut self) {
     info!("...terminating the aprs client!");
+    println!("test");
+
+    self.m_terminate = true;
   }
 }
 
