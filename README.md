@@ -8,9 +8,41 @@ The default parser should be fine for most use cases. To separate the library fr
 In case a parse for your custom data structure is desired simply the `Parse` trait.
 
 ## Usage
-TODO add usage
+Messages can be read by passing a callback to the client like in the following simple example:
+```rust
+use ogn_client_rs::{APRSClient, PORT};
+
+fn main() {
+
+  // create a closure which takes a &str as parameter. Can also be a regular function.
+  let callback = |message: &str| {
+    println!("from callback: {}", message);
+  }
+
+  let client = APRSClient::new("aprs.glidernet.org", PORT::FULLLFEED, Box::new(callback));
+
+  // keep the client alive for 5s
+  std::thread::sleep(std::time::Duration::from_secs(5));
+
+  // client runs out of scope and gets destroyed
+}
+```
 
 
+
+## TODO:
+### Library
+- Make reading asynchronous
+- check for login status
+- check for connection status
+- add send status
+- add passcode generation
+
+### parsing
+- Make sure the lat/long conversion to coordinate is correct
+- create an example with a parser
+
+# Further Details
 ## aprs-is notes:
 - constant information should only be sent every 5 minutes
 [ogn-wiki](http://wiki.glidernet.org/aprs-interaction-examples)
@@ -27,17 +59,3 @@ are seperated with a `:`. The fields until `!W33!` are pure APRS format and afte
 
 For the processing of the received messages a callback approach is used. This mitigates the responsibility of the
 client which should only be responsible for receiving and sending the data.
-
-
-## TODO:
-### Library
-- Make reading asynchronous
-- check for login status
-- check for connection status
-- add send status
-- add passcode generation
-
-### parsing
-- Make sure the lat/long conversion to coordinate is correct
-- create an example with a parser
-
