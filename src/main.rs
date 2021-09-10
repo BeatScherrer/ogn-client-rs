@@ -7,6 +7,9 @@ use std::io::Error;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
 
+mod parser;
+use parser::{OgnTransmission, Parse};
+
 fn main() -> Result<(), Error> {
   //configure loggers
   let stdout = ConsoleAppender::builder()
@@ -26,6 +29,9 @@ fn main() -> Result<(), Error> {
   // ------------------------------------------------------------------------------
   let callback = |message: &str| {
     println!("callback: {}", message);
+
+    // This does not work yet...
+    // println! {"{:#?}", OgnTransmission::parse(message).unwrap()};
   };
 
   // pass the callback to the client!
@@ -40,6 +46,9 @@ fn main() -> Result<(), Error> {
 
   // example of sending a status message
   // TODO
+
+  println!("keeping client alive");
+  std::thread::sleep(std::time::Duration::from_secs(5));
 
   Ok(())
 }
