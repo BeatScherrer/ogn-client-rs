@@ -2,6 +2,8 @@ use log::{debug, info};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 #[repr(u16)]
 pub enum PORT {
@@ -12,22 +14,28 @@ pub enum PORT {
 pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
-  m_callback: Box<dyn Fn(&str)>,
+  m_callback: Box<dyn Fn(&str) + Send>,
+  m_thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl APRSClient {
-  pub fn new(target: &str, port: PORT, callback: Box<dyn Fn(&str)>) -> Self {
+  pub fn new(target: &str, port: PORT, callback: Box<dyn Fn(&str) + Send>) -> Arc<Mutex<Self>> {
     // ip addr
     let port = port as u16;
     info!("creating aprs client with target '{}:{}'", target, port);
 
     let connection = TcpStream::connect((target, port)).unwrap();
 
-    APRSClient {
+    let client = Arc::new(Mutex::new(APRSClient {
       m_writer: LineWriter::new(connection.try_clone().unwrap()),
       m_reader: BufReader::new(connection),
       m_callback: callback,
-    }
+      m_thread: None,
+    }));
+
+    APRSClient::run(client.clone());
+
+    client
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
@@ -45,14 +53,16 @@ impl APRSClient {
     self.login(LoginData::new())
   }
 
-  pub fn run(&mut self) {
+  fn run(this: Arc<Mutex<Self>>) {
     info!("starting the client...");
 
-    loop {
+    let clone = this.clone();
+
+    this.lock().unwrap().m_thread = Some(std::thread::spawn(move || {
       // read the message and pass it to the callback
-      let message = self.read().unwrap();
-      (self.m_callback)(&message);
-    }
+      let message = clone.lock().unwrap().read().unwrap();
+      (clone.lock().unwrap().m_callback)(&message);
+    }));
   }
 
   /// Send bytes and return the answer

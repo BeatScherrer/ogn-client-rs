@@ -29,11 +29,11 @@ fn main() -> Result<(), Error> {
   };
 
   // pass the callback to the client!
-  let mut client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED, Box::new(callback));
+  let client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED, Box::new(callback));
 
   // log into the network
   let login_data = LoginData::new().user_name("Beat");
-  client.login(login_data)?;
+  client.lock().unwrap().login(login_data)?;
 
   // example of sending a position message
   // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();
@@ -41,7 +41,5 @@ fn main() -> Result<(), Error> {
   // example of sending a status message
   // TODO
 
-  // TODO think about where to dispatch the reading
-  client.run();
   Ok(())
 }
