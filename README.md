@@ -32,11 +32,11 @@ fn main() {
 
 ## TODO:
 ### Library
-- Make reading asynchronous
 - check for login status
 - check for connection status
 - add send status
 - add passcode generation
+- add documentation for library
 
 ### parsing
 - Make sure the lat/long conversion to coordinate is correct
