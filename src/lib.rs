@@ -5,6 +5,9 @@ use std::net::TcpStream;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+mod parser;
+use parser::parse_login_answer;
+
 #[repr(u16)]
 pub enum PORT {
   FULLFEED = 10152,
@@ -40,7 +43,7 @@ impl APRSClient {
       m_logged_in: false,
     }));
 
-    APRSClient::run(client.clone());
+    // APRSClient::run(client.clone());
 
     client
   }
@@ -50,10 +53,14 @@ impl APRSClient {
 
     let login_message = APRSClient::create_aprs_login(login_data);
 
-    self.send_message(login_message.as_str())?;
-    info!("login answer:  {}", self.read()?);
+    debug!("login answer:  {}", login_message);
 
-    // TODO parse and set logged in state
+    self.send_message(login_message.as_str())?;
+    let login_answer = self.read()?;
+
+    if let true = parser::parse_login_answer(&login_answer) {
+      self.m_logged_in = true;
+    }
 
     Ok(())
   }

@@ -138,6 +138,12 @@ fn parse_message(message: &str) -> OgnMessage {
   }
 }
 
+pub fn parse_login_answer(login_message: &str) -> bool {
+  // TODO parse login message and evaluate login state
+
+  false
+}
+
 // enum OgnStatusField {
 //   PilotName,
 //   Manuf,
