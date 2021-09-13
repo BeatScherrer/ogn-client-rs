@@ -144,47 +144,6 @@ pub fn parse_login_answer(login_message: &str) -> bool {
   false
 }
 
-// enum OgnStatusField {
-//   PilotName,
-//   Manuf,
-//   Model,
-//   Type,
-//   SerialNumber,
-//   Registration,
-//   CompetitionId,
-//   CompetitionClass,
-//   CompetitionTask,
-//   BaseAirfield,
-//   InCaseOfEmergency,
-//   PilotId,
-//   Hardware,
-//   Software,
-// }
-
-// impl FromStr for OgnStatusField {
-//   type Err = ();
-
-//   fn from_str(input: &str) -> Result<OgnStatusField, Self::Err> {
-//     match input {
-//       "Pilot" => Ok(OgnStatusField::PilotName),
-//       "Manuf" => Ok(OgnStatusField::Manuf),
-//       "Model" => Ok(OgnStatusField::Model),
-//       "Type" => Ok(OgnStatusField::Type),
-//       "SN" => Ok(OgnStatusField::SerialNumber),
-//       "Reg" => Ok(OgnStatusField::Registration),
-//       "ID" => Ok(OgnStatusField::CompetitionId),
-//       "Class" => Ok(OgnStatusField::CompetitionClass),
-//       "Task" => Ok(OgnStatusField::CompetitionTask),
-//       "Base" => Ok(OgnStatusField::BaseAirfield),
-//       "ICE" => Ok(OgnStatusField::InCaseOfEmergency),
-//       "PilotID" => Ok(OgnStatusField::PilotId),
-//       "Hard" => Ok(OgnStatusField::Hardware),
-//       "Soft" => Ok(OgnStatusField::Software),
-//       _ => Err(()),
-//     }
-//   }
-// }
-
 #[cfg(test)]
 mod tests {
   use super::*;
