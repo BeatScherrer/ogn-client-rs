@@ -11,23 +11,6 @@ pub enum PORT {
   FILTER = 14580,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct OgnStatusMessage {
-  m_pilot_name: Option<String>,
-  m_manufacturer: Option<String>,
-  m_model: Option<String>,
-  m_type: Option<String>,
-  m_serial_number: Option<u32>,
-  m_competition_id: Option<String>,
-  m_competition_class: Option<String>,
-  m_competition_task: Option<String>,
-  m_base_airfield: Option<String>,
-  m_in_case_of_emergency: Option<String>,
-  m_pilot_id: Option<String>,
-  m_hardware: Option<String>,
-  m_software: Option<String>,
-}
-
 pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
@@ -70,7 +53,7 @@ impl APRSClient {
     self.send_message(login_message.as_str())?;
     info!("login answer:  {}", self.read()?);
 
-    // TODO set logged in state
+    // TODO parse and set logged in state
 
     Ok(())
   }
@@ -199,6 +182,98 @@ impl<'a> LoginData<'a> {
   }
 
   pub fn build(&mut self) -> &mut LoginData<'a> {
+    self
+  }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct OgnStatusMessage {
+  pilot_name: Option<String>,
+  manufacturer: Option<String>,
+  model: Option<String>,
+  make: Option<String>,
+  serial_number: Option<String>,
+  competition_id: Option<String>,
+  competition_class: Option<String>,
+  competition_task: Option<String>,
+  base_airfield: Option<String>,
+  in_case_of_emergency: Option<String>,
+  pilot_id: Option<String>,
+  hardware: Option<String>,
+  software: Option<String>,
+}
+
+impl OgnStatusMessage {
+  pub fn new() -> Self {
+    Self {
+      pilot_name: None,
+      manufacturer: None,
+      model: None,
+      make: None,
+      serial_number: None,
+      competition_id: None,
+      competition_class: None,
+      competition_task: None,
+      base_airfield: None,
+      in_case_of_emergency: None,
+      pilot_id: None,
+      hardware: None,
+      software: None,
+    }
+  }
+
+  pub fn pilot_name(&mut self, pilot_name: &str) -> &mut Self {
+    self.pilot_name = Some(String::from(pilot_name));
+    self
+  }
+
+  pub fn manufacturer(&mut self, manufacturer: &str) -> &mut Self {
+    self.manufacturer = Some(String::from(manufacturer));
+    self
+  }
+
+  pub fn model(mut self, model: &str) -> Self {
+    self.model = Some(String::from(model));
+    self
+  }
+  pub fn make(mut self, make: &str) -> Self {
+    self.make = Some(String::from(make));
+    self
+  }
+  pub fn serial_number(mut self, serial_number: &str) -> Self {
+    self.serial_number = Some(String::from(serial_number));
+    self
+  }
+  pub fn competition_id(mut self, competition_id: &str) -> Self {
+    self.competition_id = Some(String::from(competition_id));
+    self
+  }
+  pub fn competition_class(mut self, competition_class: &str) -> Self {
+    self.competition_class = Some(String::from(competition_class));
+    self
+  }
+  pub fn competition_task(mut self, competition_task: &str) -> Self {
+    self.competition_task = Some(String::from(competition_task));
+    self
+  }
+  pub fn base_airfield(mut self, base_airfield: &str) -> Self {
+    self.base_airfield = Some(String::from(base_airfield));
+    self
+  }
+  pub fn in_case_of_emergency(mut self, in_case_of_emergency: &str) -> Self {
+    self.in_case_of_emergency = Some(String::from(in_case_of_emergency));
+    self
+  }
+  pub fn pilot_id(mut self, pilot_id: &str) -> Self {
+    self.pilot_id = Some(String::from(pilot_id));
+    self
+  }
+  pub fn hardware(mut self, hardware: &str) -> Self {
+    self.hardware = Some(String::from(hardware));
+    self
+  }
+  pub fn software(mut self, software: &str) -> Self {
+    self.software = Some(String::from(software));
     self
   }
 }
