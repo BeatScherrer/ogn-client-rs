@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::{debug, error, info};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::net::TcpStream;
@@ -11,15 +11,36 @@ pub enum PORT {
   FILTER = 14580,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct OgnStatusMessage {
+  m_pilot_name: Option<String>,
+  m_manufacturer: Option<String>,
+  m_model: Option<String>,
+  m_type: Option<String>,
+  m_serial_number: Option<u32>,
+  m_competition_id: Option<String>,
+  m_competition_class: Option<String>,
+  m_competition_task: Option<String>,
+  m_base_airfield: Option<String>,
+  m_in_case_of_emergency: Option<String>,
+  m_pilot_id: Option<String>,
+  m_hardware: Option<String>,
+  m_software: Option<String>,
+}
+
 pub struct APRSClient {
   m_reader: BufReader<TcpStream>,
   m_writer: LineWriter<TcpStream>,
   m_callback: Box<dyn Fn(&str) + Send>,
   m_thread: Option<std::thread::JoinHandle<()>>,
   m_terminate: bool,
+  m_logged_in: bool,
 }
 
 impl APRSClient {
+  // ------------------------------------------------------------------------------
+  // Public interface
+  // ------------------------------------------------------------------------------
   pub fn new(target: &str, port: PORT, callback: Box<dyn Fn(&str) + Send>) -> Arc<Mutex<Self>> {
     // ip addr
     let port = port as u16;
@@ -33,6 +54,7 @@ impl APRSClient {
       m_callback: callback,
       m_thread: None,
       m_terminate: false,
+      m_logged_in: false,
     }));
 
     APRSClient::run(client.clone());
@@ -47,6 +69,8 @@ impl APRSClient {
 
     self.send_message(login_message.as_str())?;
     info!("login answer:  {}", self.read()?);
+
+    // TODO set logged in state
 
     Ok(())
   }
@@ -88,6 +112,14 @@ impl APRSClient {
     self.send_message("#keepalive").unwrap();
   }
 
+  pub fn send_status(&self, status_message: &OgnStatusMessage) {
+    if self.is_logged_in() {
+      // TODO serialize status message and pass along the line
+    } else {
+      error!("not logged in, cannot send status message!");
+    }
+  }
+
   pub fn set_filter(&mut self, filter_expression: &str) {
     debug!("applying filter: '{}'", filter_expression);
     self
@@ -95,6 +127,9 @@ impl APRSClient {
       .unwrap();
   }
 
+  // ------------------------------------------------------------------------------
+  // Private interface
+  // ------------------------------------------------------------------------------
   fn read(&mut self) -> Result<String, std::io::Error> {
     let mut string_buffer = String::new();
 
@@ -109,6 +144,10 @@ impl APRSClient {
       "user {} pass {} vers {} {}",
       login_data.user_name, login_data.pass_code, login_data.app_name, login_data.app_version
     )
+  }
+
+  fn is_logged_in(&self) -> bool {
+    self.m_logged_in
   }
 }
 

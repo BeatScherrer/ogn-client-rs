@@ -57,23 +57,6 @@ impl Parse for OgnTransmission {
   }
 }
 
-#[derive(Debug, PartialEq)]
-struct OgnStatusMessage {
-  m_pilot_name: Option<String>,
-  m_manufacturer: Option<String>,
-  m_model: Option<String>,
-  m_type: Option<String>,
-  m_serial_number: Option<u32>,
-  m_competition_id: Option<String>,
-  m_competition_class: Option<String>,
-  m_competition_task: Option<String>,
-  m_base_airfield: Option<String>,
-  m_in_case_of_emergency: Option<String>,
-  m_pilot_id: Option<String>,
-  m_hardware: Option<String>,
-  m_software: Option<String>,
-}
-
 fn parse_header(header: &str) -> OgnHeader {
   let header_splits: Vec<&str> = header.split('>').collect();
   let sender_id = header_splits[0];
