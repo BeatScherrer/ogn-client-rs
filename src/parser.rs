@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use geocoding::Coordinate;
-use log::{debug, info};
+use log::{debug, error, info};
 use regex::Regex;
 use std::fmt::Debug;
 
@@ -138,10 +138,13 @@ fn parse_message(message: &str) -> OgnMessage {
   }
 }
 
-pub fn parse_login_answer(login_message: &str) -> bool {
-  // TODO parse login message and evaluate login state
+pub fn parse_login_answer(login_answer: &str) -> bool {
+  let re = Regex::new(r"^# logresp (\w+) (verified)").unwrap();
 
-  false
+  match re.find(login_answer) {
+    Some(_) => true,
+    _ => false,
+  }
 }
 
 #[cfg(test)]
@@ -183,5 +186,13 @@ mod tests {
     let parsed_position = OgnTransmission::parse(test_message).unwrap();
 
     assert_eq!(expected, parsed_position);
+  }
+
+  #[test]
+  fn parser_login_answer() {
+    assert!(parse_login_answer(r"# logresp Beat verified, server GLIDERN2") == true);
+
+    assert!(parse_login_answer(r"# logresp Beat unverified, server GLIDERN1") == false);
+    assert!(parse_login_answer("random string") == false);
   }
 }
