@@ -52,7 +52,7 @@ impl APRSClient {
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
     info!("login with following data: {:?}...", &login_data);
 
-    let login_message = APRSClient::create_aprs_login(login_data);
+    let login_message = APRSClient::create_aprs_login(&login_data);
 
     self.send_message(login_message.as_str())?;
     let login_answer = self.read()?;
@@ -61,11 +61,21 @@ impl APRSClient {
     self.m_logged_in = parser::parse_login_answer(&login_answer);
 
     match self.m_logged_in {
-      true => info!("...logged in successfully."),
-      false => error!("...failed to log in!"),
-    };
-
-    Ok(())
+      true => {
+        info!("...logged in successfully.");
+        Ok(())
+      }
+      false => {
+        error!("...failed to log in!");
+        Err(std::io::Error::new(
+          std::io::ErrorKind::PermissionDenied,
+          format!(
+            "could not log in with given credentials: {:#?}",
+            &login_data
+          ),
+        ))
+      }
+    }
   }
 
   pub fn login_default(&mut self) -> Result<(), std::io::Error> {
@@ -133,7 +143,7 @@ impl APRSClient {
     Ok(string_buffer)
   }
 
-  fn create_aprs_login(login_data: LoginData) -> String {
+  fn create_aprs_login(login_data: &LoginData) -> String {
     format!(
       "user {} pass {} vers {} {}",
       login_data.user_name, login_data.pass_code, login_data.app_name, login_data.app_version
