@@ -9,7 +9,9 @@ pub mod parser;
 
 #[repr(u16)]
 pub enum PORT {
+  /// Subscribe to the full feed (note: no filtering but does not require authentication)
   FULLFEED = 10152,
+  /// Port on which filtering is supported
   FILTER = 14580,
 }
 
@@ -83,7 +85,7 @@ impl APRSClient {
   }
 
   pub fn run(this: Arc<Mutex<Self>>) {
-    info!("starting the client...");
+    info!("starting the client reader thread...");
 
     let clone = this.clone();
 
@@ -92,7 +94,6 @@ impl APRSClient {
       let mut lock = clone.lock().unwrap();
 
       while !lock.m_terminate {
-        println!("a {}", lock.m_terminate);
         let message = lock.read().unwrap();
         (lock.m_callback)(&message);
       }

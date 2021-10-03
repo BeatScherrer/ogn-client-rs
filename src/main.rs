@@ -23,6 +23,7 @@ fn main() -> Result<(), Error> {
   // log into the network
   let login_data = LoginData::new().user_name("Beat").pass_code("28915");
   client.lock().unwrap().login(login_data)?;
+  APRSClient::run(client.clone());
 
   // example of sending a position message
   // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();

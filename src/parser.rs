@@ -76,6 +76,8 @@ fn parse_header(header: &str) -> OgnHeader {
 fn parse_message(message: &str) -> OgnMessage {
   debug!("{:#?}", message);
 
+  // TODO add regex parser
+
   // first split the message at the extra field separator
   let regex = Regex::new("!W[0-9]+!").expect("bad regex");
   let splits: Vec<&str> = regex.split(&message).collect();
