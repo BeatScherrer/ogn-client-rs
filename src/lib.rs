@@ -1,3 +1,4 @@
+use chrono::Utc;
 use log::{debug, error, info};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
@@ -22,6 +23,7 @@ pub struct APRSClient {
   m_thread: Option<std::thread::JoinHandle<()>>,
   m_terminate: bool,
   m_logged_in: bool,
+  m_user: Option<String>,
 }
 
 impl APRSClient {
@@ -42,6 +44,7 @@ impl APRSClient {
       m_thread: None,
       m_terminate: false,
       m_logged_in: false,
+      m_user: None,
     }));
     // read welcome message
     info!("{}", client.lock().unwrap().read().unwrap());
@@ -65,6 +68,7 @@ impl APRSClient {
     match self.m_logged_in {
       true => {
         info!("...logged in successfully.");
+        self.m_user = Some(String::from(login_data.user_name));
         Ok(())
       }
       false => {
@@ -98,6 +102,35 @@ impl APRSClient {
         (lock.m_callback)(&message);
       }
     }));
+  }
+
+  pub fn send_position(&mut self, position: &str) -> Result<(), std::io::Error> {
+    // make sure we are logged in
+    if let None = self.m_user {
+      return Err(std::io::Error::new(
+        std::io::ErrorKind::PermissionDenied,
+        "permission denied",
+      ));
+    }
+
+    // create the position message
+
+    // get the timestamp
+    // let now = Utc::now();
+    // convert time to wonky format
+    let now_wonky = "123456";
+    let position = "5123.45N/00123.45E";
+    let ground_track = 180;
+    let ground_speed = 25;
+    let altitude = 1000;
+
+    // general aprs message (i.e. before !xx! separator)
+    let position_message = format!(
+      "{}>OGNAPP:/{}h{}'{}/{}/A={}",
+      "beat", now_wonky, position, ground_track, ground_speed, altitude
+    );
+
+    self.send_message(&position_message)
   }
 
   /// Send bytes and return the answer

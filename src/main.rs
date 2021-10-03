@@ -26,7 +26,9 @@ fn main() -> Result<(), Error> {
   APRSClient::run(client.clone());
 
   // example of sending a position message
-  // client.send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50").unwrap();
+  // client
+  //   .send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50")
+  //   .unwrap();
 
   // example of sending a status message
   // TODO
