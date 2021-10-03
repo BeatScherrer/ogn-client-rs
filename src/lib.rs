@@ -5,8 +5,7 @@ use std::net::TcpStream;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-mod parser;
-use parser::parse_login_answer;
+pub mod parser;
 
 #[repr(u16)]
 pub enum PORT {
@@ -42,6 +41,8 @@ impl APRSClient {
       m_terminate: false,
       m_logged_in: false,
     }));
+    // read welcome message
+    info!("{}", client.lock().unwrap().read().unwrap());
 
     // APRSClient::run(client.clone());
 
@@ -49,18 +50,20 @@ impl APRSClient {
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
-    info!("login with following data: {:?}", &login_data);
+    info!("login with following data: {:?}...", &login_data);
 
     let login_message = APRSClient::create_aprs_login(login_data);
 
-    debug!("login answer:  {}", login_message);
-
     self.send_message(login_message.as_str())?;
     let login_answer = self.read()?;
+    debug!("login answer:  {}", login_answer);
 
-    if let true = parser::parse_login_answer(&login_answer) {
-      self.m_logged_in = true;
-    }
+    self.m_logged_in = parser::parse_login_answer(&login_answer);
+
+    match self.m_logged_in {
+      true => info!("...logged in successfully."),
+      false => error!("...failed to log in!"),
+    };
 
     Ok(())
   }
@@ -69,7 +72,7 @@ impl APRSClient {
     self.login(LoginData::new())
   }
 
-  fn run(this: Arc<Mutex<Self>>) {
+  pub fn run(this: Arc<Mutex<Self>>) {
     info!("starting the client...");
 
     let clone = this.clone();
@@ -105,6 +108,7 @@ impl APRSClient {
   pub fn send_status(&self, status_message: &OgnStatusMessage) {
     if self.is_logged_in() {
       // TODO serialize status message and pass along the line
+      debug!("{:#?}", status_message);
     } else {
       error!("not logged in, cannot send status message!");
     }
