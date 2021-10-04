@@ -1,3 +1,5 @@
+#[macro_use] extern crate pretty_assertions;
+
 use chrono::Utc;
 use log::{debug, error, info};
 use std::fmt::Debug;

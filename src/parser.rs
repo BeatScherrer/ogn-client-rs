@@ -58,13 +58,15 @@ impl Parse for OgnTransmission {
 }
 
 fn parse_header(header: &str) -> OgnHeader {
-  let header_splits: Vec<&str> = header.split('>').collect();
-  let sender_id = header_splits[0];
+  // parse header with regex
+  let regex = Regex::new(r"^(?P<id>\w+)>(?P<target>\w+),(?P<protocol>\w+),(?P<receiver>\w+)$").unwrap();
 
-  let header_splits: Vec<&str> = header_splits[1].split(',').collect();
+  let captures = regex.captures(header).unwrap();
 
-  let receiver = header_splits[0];
-  let transmission_method = header_splits[1];
+  let sender_id = captures.name("id").unwrap().as_str();
+  let _target = captures.name("target").unwrap().as_str();
+  let transmission_method = captures.name("protocol").unwrap().as_str();
+  let receiver = captures.name("receiver").unwrap().as_str();
 
   OgnHeader {
     sender_id: sender_id.to_string(),
@@ -80,6 +82,9 @@ fn parse_message(message: &str) -> OgnMessage {
 
   // first split the message at the extra field separator
   let regex = Regex::new("!W[0-9]+!").expect("bad regex");
+  // let aircraft_regex = regex::Regex::new(r"^(?P<sender>\w+)APRS,(),():/(?P<time>)h(?P<latitude>)N(?P<longitude>)E'()/()/A=() () ()fpm +()rot ()dB 3e -()kHz").unwrap();
+
+
   let splits: Vec<&str> = regex.split(&message).collect();
 
   for &split in &splits {
@@ -161,7 +166,7 @@ mod tests {
     // create the expected output
     let header = OgnHeader {
       sender_id: "OGN82149C".to_string(),
-      receiver: "OGNTRK".to_string(),
+      receiver: "OxfBarton".to_string(),
       transmission_method: "qAS".to_string(),
     };
 

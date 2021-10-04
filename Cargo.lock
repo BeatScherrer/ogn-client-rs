@@ -128,6 +128,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "difference"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3304d19798a8e067e48d8e69b2c37f0b5e9b4e462504ad9e27e9f3fce02bba8"
+
+[[package]]
 name = "dtoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -651,6 +657,7 @@ dependencies = [
  "geocoding",
  "log",
  "log4rs",
+ "pretty_assertions",
  "regex",
 ]
 
@@ -782,6 +789,15 @@ name = "ppv-lite86"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac74c624d6b2d21f425f752262f42188365d7b8ff1aff74c82e45136510a4857"
+
+[[package]]
+name = "pretty_assertions"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2412f3332a07c7a2a50168988dcc184f32180a9758ad470390e5f55e089f6b6e"
+dependencies = [
+ "difference",
+]
 
 [[package]]
 name = "proc-macro2"
