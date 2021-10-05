@@ -1,6 +1,6 @@
+#[allow(unused_imports)]
 #[macro_use] extern crate pretty_assertions;
 
-use chrono::Utc;
 use log::{debug, error, info};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
@@ -106,7 +106,7 @@ impl APRSClient {
     }));
   }
 
-  pub fn send_position(&mut self, position: &str) -> Result<(), std::io::Error> {
+  pub fn send_position(&mut self, _position: &str) -> Result<(), std::io::Error> {
     // make sure we are logged in
     if let None = self.m_user {
       return Err(std::io::Error::new(

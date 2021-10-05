@@ -1,3 +1,4 @@
+use crate::parser::Parse;
 use std::io::Error;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
@@ -13,8 +14,11 @@ fn main() -> Result<(), Error> {
   let callback = |message: &str| {
     println!("callback: {}", message);
 
-    // This does not work yet...
-    // println! {"{:#?}", OgnTransmission::parse(message).unwrap()};
+    // This does not work completely yet...
+    let result = parser::OgnTransmission::parse(message);
+    if let Some(v) = result {
+      println!("{:#?}", v);
+    }
   };
 
   // pass the callback to the client!
