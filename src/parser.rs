@@ -234,7 +234,7 @@ mod tests {
   }
 
   #[test]
-  fn parser_login_answer() {
+  fn parse_login_answer_test() {
     assert!(parse_login_answer(r"# logresp user verified, server GLIDERN2") == true);
 
     assert!(parse_login_answer(r"# logresp user unverified, server GLIDERN1") == false);
@@ -242,7 +242,7 @@ mod tests {
   }
 
   #[test]
-  fn parse_message_header() {
+  fn parse_message_header_test() {
     let expected_header1 = OgnHeader {
       sender_id: "LFNW".to_string(),
       receiver: "GLIDERN5".to_string(),
@@ -273,7 +273,7 @@ mod tests {
   }
 
   #[test]
-  fn parse_message_body() {
+  fn parse_message_body_test() {
     let ogn_message_body1 = r"/074548h5111.32N/00102.04W'086/007/A=000607 !W80! id0ADDE626 -019fpm +0.0rot 5.5dB 3e -4.3kHz gps2x2";
     let expected_body1 = OgnBody {
       timestamp: Utc::today().and_hms(07, 45, 48),
