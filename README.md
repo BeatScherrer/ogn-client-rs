@@ -58,5 +58,28 @@ OGN82149C>OGNTRK,qAS,OxfBarton:/130208h5145.95N/00111.50W'232/000/A=000295 !W33!
 where the header `OGN82149C>OGNTRK,qAS,OxfBarton` and message `/130208h5145.95N/00111.50W'232/000/A=000295 !W52! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5`
 are seperated with a `:`. The fields until `!W52!`, where 5 is the third decimal digit of latitude minutes and 2 is the added digit of longitude minutes, are pure APRS format and after are "comments" which carry ogn specific extra information.
 
+The following table should also give an overview of the fields:
+| Field | Meaning | Possible fields|
+|-------|---------|----------------|
+| OGN82149C | Sender | string |
+| OGNTRK | Target | string |
+| qAS | Transmission Method | `qAS`, `TCPIP*`, others?|
+| OxfBarton | Receiver | string |
+| 1300280h | Time | HHMMSS |
+| 5145.95N | Latitude |  |
+| 00111.50W | Longitude |  |
+| 232 | ground track | 0-360 `[degrees]` |
+| 000 | ground speed | >0 `[kmh]`|
+| !W52! | APRS precision enhancement, `5` is the third decimal digit of latitude minutes, `2` is the added digit of longitude minutes | [0-9] |
+| id3782149C | OGN id | see id specifications |
+| +000fpm | climb rate | `[feet]`|
+| -4.3rot | rotation rate | angular speed in `[1 half-turn per minute]` |
+| FL000 | standard flight level | >0 `[FL]` |
+| 55.0dB |signal to noise ratio | >0 `[dB]` |
+| 0e |number of bit error corrected upon receiption| >0 `[bit]`|
+| -3.7kHz | frequency offset measured upon receiption | `[kHz]` |
+| gps3x5 | gps accuracy 3m horizontal, 5m vertical| horizontal x vertical in `[m]` |
+
+
 For the processing of the received messages a callback approach is used. This mitigates the responsibility of the
 client which should only be responsible for receiving and sending the data.
