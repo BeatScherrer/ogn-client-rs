@@ -29,7 +29,7 @@ jobs:
         run: cargo build --verbose
 
   test:
-    name: Test Suite
+    name: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
