@@ -148,6 +148,7 @@ fn parse_body(body: &str) -> Option<OgnBody> {
   // ------------------------------------------------------------------------------
   // parse ogn part
   // ------------------------------------------------------------------------------
+  // TODO maybe parsing all the field individually would allos for random order and only partially filled messages
   let ogn_parser = Regex::new(
     r"^id(?P<id>\w{8}) (?P<climb>[+-].*)fpm (?P<rot>[+-].*)rot (.*)dB (.*)kHz gps(?P<accuracy>\dx\d)",
   )
@@ -161,6 +162,7 @@ fn parse_body(body: &str) -> Option<OgnBody> {
 
   let captures = captures.unwrap();
 
+  // note: the id is encoded like 'idXXYYYYYY` where the first X encodes stealth mode, and the second no tracking flag
   let id = captures.name("id").unwrap().as_str();
   let climb_rate: f32 = captures.name("climb").unwrap().as_str().parse().unwrap();
   let rotation_rate: f32 = captures.name("rot").unwrap().as_str().parse().unwrap();

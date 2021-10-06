@@ -1,5 +1,6 @@
 #[allow(unused_imports)]
-#[macro_use] extern crate pretty_assertions;
+#[macro_use]
+extern crate pretty_assertions;
 
 use log::{debug, error, info};
 use std::fmt::Debug;
@@ -175,6 +176,7 @@ impl APRSClient {
 
     self.m_reader.read_line(&mut string_buffer)?;
     string_buffer = string_buffer.trim_end().to_string();
+    debug!("read message: {}", string_buffer);
 
     Ok(string_buffer)
   }
