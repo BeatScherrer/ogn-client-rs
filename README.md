@@ -1,7 +1,7 @@
 # ogn-client-rs
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 ![develop](https://github.com/BeatScherrer/ogn-client-rs/actions/workflows/build.yml/badge.svg?branch=develop)
-![develop](https://github.com/BeatScherrer/ogn-client-rs/actions/workflows/test.yml/badge.svg?branch=develop
+![develop](https://github.com/BeatScherrer/ogn-client-rs/actions/workflows/test.yml/badge.svg?branch=develop)
 
 
 This crate provides a Rust client for the [OGN (Open Glider Network)](http://wiki.glidernet.org/). A default parser is provided which parses the OGN messages (which are in an extended APRS format) to a corresponding Rust data structure.
