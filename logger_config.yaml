@@ -6,9 +6,9 @@ appenders:
   stdout:
     kind: console
     encoder:
-      pattern: "{h({d(%H:%M:%S)} | {l} | {f}:{L} | {m}{n})}"
+      pattern: "{h({d(%H:%M:%S)} | {l} | {f}:{L} {m}{n})}"
 
 root:
-  level: debug
+  level: info
   appenders:
     - stdout
