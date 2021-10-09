@@ -11,8 +11,6 @@ fn main() -> Result<(), Error> {
   // Here comes the interesting part
   // ------------------------------------------------------------------------------
   let callback = |message: &str| {
-    println!("callback: {}", message);
-
     // This does not work completely yet...
     let result = parser::OgnTransmission::parse(message);
     if let Some(v) = result {
@@ -37,7 +35,7 @@ fn main() -> Result<(), Error> {
   // TODO
 
   println!("keeping client alive");
-  std::thread::sleep(std::time::Duration::from_secs(5));
-
-  Ok(())
+  loop {
+    std::thread::sleep(std::time::Duration::from_secs(1));
+  }
 }
