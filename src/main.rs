@@ -1,9 +1,8 @@
-use crate::parser::Parse;
+mod parser;
+use parser::Parse;
 use std::io::Error;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
-
-mod parser;
 
 fn main() -> Result<(), Error> {
   log4rs::init_file("logger_config.yaml", Default::default()).unwrap();

@@ -93,28 +93,15 @@ fn parse_header(header: &str) -> Option<OgnHeader> {
 }
 
 fn parse_body(body: &str) -> Option<OgnBody> {
-  // first split the message at the extra field separator
-  // note: the part before !W..! is a regular aprs expression
-  // while afterwards is an ogn extension
-  let regex = Regex::new("!W[0-9]+!").expect("bad splitting regex");
-  let splits: Vec<&str> = regex.split(&body).collect();
-
-  for &split in &splits {
-    println!("## {}", &split);
-  }
-
-  let aprs_part = splits[0].trim();
-  let ogn_extra_part = splits[1].trim();
-
   // parse aprs part
   let aprs_regex = Regex::new(
-    r"^/(?P<time>\d{6})h(?P<lat>.*)[NS]/(?P<lon>.*)[EW]['^](?P<ground_track>\d{3})/(?P<ground_speed>\d{3})/A=(?P<altitude>\d{6})$",
+    r"/(?P<time>\d{6})h(?P<lat>.*)[NS].(?P<lon>.*)[EW].(?P<ground_track>\d{3})/(?P<ground_speed>\d{3})/A=(?P<altitude>\d{6})",
   )
   .expect("bad aprs regex");
 
-  let captures = aprs_regex.captures(aprs_part);
+  let captures = aprs_regex.captures(body);
   if let None = captures {
-    println!("error while parsing body! {}", aprs_part);
+    error!("error while parsing aprs part of body! {}", body);
     return None;
   }
 
@@ -150,13 +137,13 @@ fn parse_body(body: &str) -> Option<OgnBody> {
   // ------------------------------------------------------------------------------
   // TODO maybe parsing all the field individually would allos for random order and only partially filled messages
   let ogn_parser = Regex::new(
-    r"^id(?P<id>\w{8}) (?P<climb>[+-].*)fpm (?P<rot>[+-].*)rot (.*)dB (.*)kHz gps(?P<accuracy>\dx\d)",
+    r"!W(?P<extra_precision>[0-9]+)! id(?P<id>\w{8}) (?P<climb>[+-].*)fpm (?P<rot>[+-].*)rot (.*)dB (.*)kHz gps(?P<accuracy>\dx\d)",
   )
   .expect("bad ogn message regex");
 
-  let captures = ogn_parser.captures(ogn_extra_part);
+  let captures = ogn_parser.captures(body);
   if let None = captures {
-    println!("error while parsing body: {}", ogn_extra_part);
+    error!("error while parsing ogn part of body: {}", body);
     return None;
   }
 
@@ -198,8 +185,20 @@ pub fn parse_login_answer(login_answer: &str) -> bool {
 mod tests {
   use super::*;
 
+  use std::sync::Once;
+
+  static INIT: Once = Once::new();
+
+  fn setup() {
+    INIT.call_once(|| {
+      log4rs::init_file("logger_config.yaml", Default::default()).unwrap();
+    });
+  }
+
   #[test]
   fn parse_full_message() {
+    setup();
+
     // test message from ogn wiki, make sure this corresponds to the actual specifications
     let test_message = r#"OGN82149C>OGNTRK,qAS,OxfBarton:/130208h5145.95N/00111.50W'232/000/A=000295 !W33! id3782149C +000fpm -4.3rot FL000.00 55.0dB 0e -3.7kHz gps3x5"#;
 
@@ -237,6 +236,8 @@ mod tests {
 
   #[test]
   fn parse_login_answer_test() {
+    setup();
+
     assert!(parse_login_answer(r"# logresp user verified, server GLIDERN2") == true);
 
     assert!(parse_login_answer(r"# logresp user unverified, server GLIDERN1") == false);
@@ -245,6 +246,8 @@ mod tests {
 
   #[test]
   fn parse_message_header_test() {
+    setup();
+
     let expected_header1 = OgnHeader {
       sender_id: "LFNW".to_string(),
       receiver: "GLIDERN5".to_string(),
@@ -276,6 +279,8 @@ mod tests {
 
   #[test]
   fn parse_message_body_test() {
+    setup();
+
     let ogn_message_body1 = r"/074548h5111.32N/00102.04W'086/007/A=000607 !W80! id0ADDE626 -019fpm +0.0rot 5.5dB 3e -4.3kHz gps2x2";
     let expected_body1 = OgnBody {
       timestamp: Utc::today().and_hms(07, 45, 48),
@@ -296,6 +301,24 @@ mod tests {
 
     assert_eq!(parsed_body1.unwrap(), expected_body1);
 
-    // TODO add tests for other possible messages and add support
+    let ogn_message_body2 = r"/200746h5008.11N\00839.28En000/000/A=001280 !W51! id3ED0077D -019fpm +0.0rot 0.2dB 4e -6.9kHz gps2x4";
+    let expected_body2 = OgnBody {
+      timestamp: Utc::today().and_hms(20, 07, 46),
+      position: Coordinate {
+        x: "500811".parse::<f32>().unwrap() / 10000.0,
+        y: "083928".parse::<f32>().unwrap() / 10000.0,
+      },
+      ground_track: 000,
+      ground_speed: 000.0,
+      altitude: 1280.0,
+      id: "3ED0077D".to_string(),
+      climb_rate: -19.0,
+      ground_turning_rate: 0.0,
+      gps_accuracy: "2x4".to_string(),
+    };
+
+    let parsed_body2 = parse_body(ogn_message_body2);
+
+    assert_eq!(parsed_body2.unwrap(), expected_body2);
   }
 }
