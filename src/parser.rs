@@ -93,6 +93,8 @@ fn parse_header(header: &str) -> Option<OgnHeader> {
 }
 
 fn parse_body(body: &str) -> Option<OgnBody> {
+  // check if m
+
   // parse aprs part
   let aprs_regex = Regex::new(
     r"/(?P<time>\d{6})h(?P<lat>.*)[NS].(?P<lon>.*)[EW].(?P<ground_track>\d{3})/(?P<ground_speed>\d{3})/A=(?P<altitude>\d{6})",
