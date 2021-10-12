@@ -28,7 +28,7 @@ pub struct OgnBody {
   timestamp: DateTime<Utc>,
   position: Coordinate<f32>,
   ground_speed: f32,
-  ground_turning_rate: f32,
+  ground_turning_rate: Option<f32>,
   climb_rate: f32,
   altitude: f32,
   ground_track: u16,
@@ -154,7 +154,15 @@ fn parse_body(body: &str) -> Option<OgnBody> {
   // note: the id is encoded like 'idXXYYYYYY` where the first X encodes stealth mode, and the second no tracking flag
   let id = captures.name("id").unwrap().as_str();
   let climb_rate: f32 = captures.name("climb").unwrap().as_str().parse().unwrap();
-  let rotation_rate: f32 = captures.name("rot").unwrap().as_str().parse().unwrap();
+
+
+  // parse optional rotation rate
+  let mut rotation_rate: Option<f32> = None;
+  let rotation_rate_capture = captures.name("rot");
+  if let Some(v) = rotation_rate_capture {
+    rotation_rate = Some(v.as_str().parse().unwrap());
+  }
+
   let gps_accuracy = captures.name("accuracy").unwrap().as_str();
 
   // assemble the message
@@ -220,7 +228,7 @@ mod tests {
       altitude: 295.0,
       climb_rate: 0.0,
       ground_speed: 0.0,
-      ground_turning_rate: -4.3,
+      ground_turning_rate: Some(-4.3),
       ground_track: 232,
       gps_accuracy: "3x5".to_string(),
       id: "3782149C".to_string(),
@@ -283,6 +291,7 @@ mod tests {
   fn parse_message_body_test() {
     setup();
 
+    // Case 1
     let ogn_message_body1 = r"/074548h5111.32N/00102.04W'086/007/A=000607 !W80! id0ADDE626 -019fpm +0.0rot 5.5dB 3e -4.3kHz gps2x2";
     let expected_body1 = OgnBody {
       timestamp: Utc::today().and_hms(07, 45, 48),
@@ -295,14 +304,13 @@ mod tests {
       altitude: 607.0,
       id: "0ADDE626".to_string(),
       climb_rate: -19.0,
-      ground_turning_rate: 0.0,
+      ground_turning_rate: Some(0.0),
       gps_accuracy: "2x2".to_string(),
     };
-
     let parsed_body1 = parse_body(ogn_message_body1);
-
     assert_eq!(parsed_body1.unwrap(), expected_body1);
 
+    // case 2
     let ogn_message_body2 = r"/200746h5008.11N\00839.28En000/000/A=001280 !W51! id3ED0077D -019fpm +0.0rot 0.2dB 4e -6.9kHz gps2x4";
     let expected_body2 = OgnBody {
       timestamp: Utc::today().and_hms(20, 07, 46),
@@ -315,12 +323,30 @@ mod tests {
       altitude: 1280.0,
       id: "3ED0077D".to_string(),
       climb_rate: -19.0,
-      ground_turning_rate: 0.0,
+      ground_turning_rate: Some(0.0),
       gps_accuracy: "2x4".to_string(),
     };
-
     let parsed_body2 = parse_body(ogn_message_body2);
-
     assert_eq!(parsed_body2.unwrap(), expected_body2);
+
+    // case 3
+    let ogn_message_body3 = r"/162405h4925.73N/01706.72E'161/066/A=000790 !W52! id2022449E +003fpm gps5x3";
+    let expected_body3 = OgnBody {
+      timestamp: Utc::today().and_hms(16, 24, 05),
+      position: Coordinate {
+        x: "492573".parse::<f32>().unwrap() / 10000.0,
+        y: "0170672".parse::<f32>().unwrap() / 10000.0
+      },
+      ground_track: 161,
+      ground_speed: 66.0,
+      altitude: 790.0,
+      id: "2022449E".to_string(),
+      climb_rate: 3.0,
+      gps_accuracy: "5x3".to_string(),
+      ground_turning_rate: None
+
+
+    };
+
   }
 }

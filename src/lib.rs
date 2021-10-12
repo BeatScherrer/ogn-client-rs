@@ -12,6 +12,7 @@ use std::sync::Mutex;
 pub mod parser;
 
 #[repr(u16)]
+#[derive(Debug, Clone)]
 pub enum PORT {
   /// Subscribe to the full feed (note: no filtering but does not require authentication)
   FULLFEED = 10152,
@@ -20,13 +21,16 @@ pub enum PORT {
 }
 
 pub struct APRSClient {
-  m_reader: BufReader<TcpStream>,
-  m_writer: LineWriter<TcpStream>,
+  m_target: String,
+  m_port: PORT,
+  m_reader: Option<BufReader<TcpStream>>,
+  m_writer: Option<LineWriter<TcpStream>>,
   m_callback: Box<dyn Fn(&str) + Send>,
   m_thread: Option<std::thread::JoinHandle<()>>,
   m_terminate: bool,
   m_logged_in: bool,
   m_user: Option<String>,
+  m_is_connected: bool,
 }
 
 impl APRSClient {
@@ -35,26 +39,62 @@ impl APRSClient {
   // ------------------------------------------------------------------------------
   pub fn new(target: &str, port: PORT, callback: Box<dyn Fn(&str) + Send>) -> Arc<Mutex<Self>> {
     // ip addr
-    let port = port as u16;
-    info!("creating aprs client with target '{}:{}'", target, port);
-
-    let connection = TcpStream::connect((target, port)).unwrap();
+    info!("creating aprs client with target '{}:{:#?}'", target, port);
 
     let client = Arc::new(Mutex::new(APRSClient {
-      m_writer: LineWriter::new(connection.try_clone().unwrap()),
-      m_reader: BufReader::new(connection),
+      m_port: port,
+      m_target: target.to_string(),
+      m_writer: None,
+      m_reader: None,
       m_callback: callback,
       m_thread: None,
       m_terminate: false,
       m_logged_in: false,
       m_user: None,
+      m_is_connected: false,
     }));
-    // read welcome message
-    info!("{}", client.lock().unwrap().read().unwrap());
 
-    // APRSClient::run(client.clone());
+    // lock scope
+    {
+      let mut locked_client = client.lock().unwrap();
+
+      // try to connect to the server
+      locked_client.connect();
+    }
 
     client
+  }
+
+  pub fn is_connected(&self) -> bool {
+    self.m_is_connected
+  }
+
+  pub fn connect(&mut self) -> Result<(), std::io::Error> {
+    let target = format!("{}:{}", self.m_target, self.m_port.clone() as u16);
+
+    info!("trying to connect to {}...", target);
+
+    let connection = TcpStream::connect(target);
+
+    match connection {
+      Ok(_) => info!("...connection successfully established"),
+      Err(err) => {
+        error!("{}", err);
+        return Err(err);
+      }
+    };
+
+    let connection = connection.unwrap();
+
+    self.m_writer = Some(LineWriter::new(connection.try_clone().unwrap()));
+    self.m_reader = Some(BufReader::new(connection));
+
+    self.m_is_connected = true;
+
+    // read welcome message from server
+    info!("{}", self.read().unwrap());
+
+    Ok(())
   }
 
   pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
@@ -88,15 +128,29 @@ impl APRSClient {
   }
 
   pub fn login_default(&mut self) -> Result<(), std::io::Error> {
+    if !self.is_logged_in() {
+      return Err(std::io::Error::new(
+        std::io::ErrorKind::NotConnected,
+        "client is not connected to the server, make sure to connect first",
+      ));
+    }
+
     self.login(LoginData::new())
   }
 
   pub fn run(this: Arc<Mutex<Self>>) {
     info!("starting the client reader thread...");
 
+      //
+    let mut lock = this.lock().unwrap();
+    if !lock.m_is_connected {
+      info!("currently not connected, trying to connect...");
+      lock.connect().unwrap();
+    }
+
     let clone = this.clone();
 
-    this.lock().unwrap().m_thread = Some(std::thread::spawn(move || {
+    lock.m_thread = Some(std::thread::spawn(move || {
       // read the message and pass it to the callback
       let mut lock = clone.lock().unwrap();
 
@@ -136,22 +190,6 @@ impl APRSClient {
     self.send_message(&position_message)
   }
 
-  /// Send bytes and return the answer
-  pub fn send_message(&mut self, message: &str) -> Result<(), std::io::Error> {
-    let mut full_message = String::new();
-    debug!("sending message: '{}'", message);
-
-    full_message.push_str(message);
-    full_message.push_str("\r\n");
-    self.m_writer.write_all(full_message.as_bytes())?;
-    self.m_writer.flush()?;
-
-    Ok(())
-  }
-  pub fn send_heart_beat(&mut self) {
-    self.send_message("#keepalive").unwrap();
-  }
-
   pub fn send_status(&self, status_message: &OgnStatusMessage) {
     if self.is_logged_in() {
       // TODO serialize status message and pass along the line
@@ -174,12 +212,45 @@ impl APRSClient {
   fn read(&mut self) -> Result<String, std::io::Error> {
     let mut string_buffer = String::new();
 
-    self.m_reader.read_line(&mut string_buffer)?;
+    self
+      .m_reader
+      .as_mut()
+      .unwrap()
+      .read_line(&mut string_buffer)?;
     string_buffer = string_buffer.trim_end().to_string();
     debug!("read message: {}", string_buffer);
 
     Ok(string_buffer)
   }
+
+  fn send_message(&mut self, message: &str) -> Result<(), std::io::Error> {
+    // check if we are connected
+    if !self.m_is_connected {
+      error!("currently not connected, cannot send message");
+      return Err(std::io::Error::new(
+        std::io::ErrorKind::NotConnected,
+        "not connected, cannot send message",
+      ));
+    }
+
+    let mut full_message = String::new();
+    debug!("sending message: '{}'", message);
+
+    full_message.push_str(message);
+    full_message.push_str("\r\n");
+    self
+      .m_writer
+      .as_mut()
+      .unwrap()
+      .write_all(full_message.as_bytes())?;
+    self.m_writer.as_mut().unwrap().flush()?;
+
+    Ok(())
+  }
+
+  // fn send_heart_beat(&mut self) {
+  //   self.send_message("#keepalive").unwrap();
+  // }
 
   fn create_aprs_login(login_data: &LoginData) -> String {
     format!(
@@ -196,7 +267,6 @@ impl APRSClient {
 impl Drop for APRSClient {
   fn drop(&mut self) {
     info!("...terminating the aprs client!");
-    println!("test");
 
     self.m_terminate = true;
   }
