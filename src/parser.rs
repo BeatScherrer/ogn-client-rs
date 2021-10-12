@@ -32,7 +32,7 @@ pub struct OgnBody {
   climb_rate: f32,
   altitude: f32,
   ground_track: u16,
-  gps_accuracy: String,
+  gps_accuracy: Option<String>,
   id: String,
 }
 
@@ -139,7 +139,8 @@ fn parse_body(body: &str) -> Option<OgnBody> {
   // ------------------------------------------------------------------------------
   // TODO maybe parsing all the field individually would allos for random order and only partially filled messages
   let ogn_parser = Regex::new(
-    r"!W(?P<extra_precision>[0-9]+)! id(?P<id>\w{8}) (?P<climb>[+-].*)fpm (?P<rot>[+-].*)rot (.*)dB (.*)kHz gps(?P<accuracy>\dx\d)",
+    r"!W(?P<extra_precision>[0-9]+)! id(?P<id>\w{8})( (?P<climb>[+-].*)fpm)?( (?P<rot>[+-].*)rot)?( (.*)dB)?( (.*)kHz)?( gps(?P<accuracy>\dx\d))?",
+    // r"!W(?P<extra_precision>[0-9]+)! id(?P<id>\w{8}) (?P<climb>[+-].*)fm gps(?P<accuracy>\dx\d)",
   )
   .expect("bad ogn message regex");
 
@@ -155,7 +156,7 @@ fn parse_body(body: &str) -> Option<OgnBody> {
   let id = captures.name("id").unwrap().as_str();
   let climb_rate: f32 = captures.name("climb").unwrap().as_str().parse().unwrap();
 
-
+  //
   // parse optional rotation rate
   let mut rotation_rate: Option<f32> = None;
   let rotation_rate_capture = captures.name("rot");
@@ -163,7 +164,13 @@ fn parse_body(body: &str) -> Option<OgnBody> {
     rotation_rate = Some(v.as_str().parse().unwrap());
   }
 
-  let gps_accuracy = captures.name("accuracy").unwrap().as_str();
+  //
+  // gps accuracy
+  let mut gps_accuracy: Option<String> = None;
+  let gps_accuracy_capture = captures.name("accuracy");
+  if let Some(v) = gps_accuracy_capture {
+    gps_accuracy = Some(v.as_str().parse().unwrap());
+  }
 
   // assemble the message
   Some(OgnBody {
@@ -177,7 +184,7 @@ fn parse_body(body: &str) -> Option<OgnBody> {
     climb_rate: climb_rate,
     altitude: altitude,
     ground_track: ground_track.parse().unwrap(),
-    gps_accuracy: String::from(gps_accuracy),
+    gps_accuracy: gps_accuracy,
     id: id.to_string(),
   })
 }
@@ -230,7 +237,7 @@ mod tests {
       ground_speed: 0.0,
       ground_turning_rate: Some(-4.3),
       ground_track: 232,
-      gps_accuracy: "3x5".to_string(),
+      gps_accuracy: Some("3x5".to_string()),
       id: "3782149C".to_string(),
     };
 
@@ -305,7 +312,7 @@ mod tests {
       id: "0ADDE626".to_string(),
       climb_rate: -19.0,
       ground_turning_rate: Some(0.0),
-      gps_accuracy: "2x2".to_string(),
+      gps_accuracy: Some("2x2".to_string()),
     };
     let parsed_body1 = parse_body(ogn_message_body1);
     assert_eq!(parsed_body1.unwrap(), expected_body1);
@@ -324,7 +331,7 @@ mod tests {
       id: "3ED0077D".to_string(),
       climb_rate: -19.0,
       ground_turning_rate: Some(0.0),
-      gps_accuracy: "2x4".to_string(),
+      gps_accuracy: Some("2x4".to_string()),
     };
     let parsed_body2 = parse_body(ogn_message_body2);
     assert_eq!(parsed_body2.unwrap(), expected_body2);
@@ -342,11 +349,30 @@ mod tests {
       altitude: 790.0,
       id: "2022449E".to_string(),
       climb_rate: 3.0,
-      gps_accuracy: "5x3".to_string(),
+      gps_accuracy: Some("5x3".to_string()),
       ground_turning_rate: None
+    };
+    let parsed_body3 = parse_body(ogn_message_body3);
+    assert_eq!(parsed_body3.unwrap(), expected_body3);
 
-
+    // case 4
+    let ogn_message_body4 = r"/164425h5115.68N/00005.56Wz000/001/A=000614 !W25! id0308A689 +0fpm FNT10 22.0dB +58.8kHz 2e";
+    let expected_body4 = OgnBody {
+      timestamp: Utc::today().and_hms(16, 44, 25),
+      position: Coordinate {
+        x: "511568".parse::<f32>().unwrap() / 10000.0,
+        y: "000556".parse::<f32>().unwrap() / 10000.0
+      },
+      ground_track: 000,
+      ground_speed: 1.0,
+      altitude: 614.0,
+      id: "0308A689".to_string(),
+      climb_rate: 0.0,
+      gps_accuracy: None,
+      ground_turning_rate: None
     };
 
+    let parsed_body4 = parse_body(ogn_message_body4).unwrap();
+    assert_eq!(parsed_body4, expected_body4);
   }
 }
