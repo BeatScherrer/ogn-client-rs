@@ -31,6 +31,50 @@ fn main() {
 }
 ```
 
+example using the parser and setting a afilter
+```rust
+mod parser;
+use parse::Parse;
+
+use std::io::Error;
+
+use ogn_client_rs::{APRSClient, LoginData, PORT};
+
+fn main() -> Result<(), Error> {
+  let callback = |message: &str| {
+    let result = parser::OgnTransmission::parse(message);
+    if let Some(value) = result {
+      println!("{:#?}", value);
+    }
+  };
+
+  let client = APRSClient::new("aprs.glidernet.org", PORT::FILTER, Box::new(callback));
+
+  let login_data = LoginData::new().user_name("YOUR_USER_NAME").pass_code("YOUR_PASSCODE");
+
+  {
+    let mut locked = client.lock().unwrap();
+
+    while !locked.is_connectd() {
+      let _ = locked.connect();
+
+      std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+  }
+
+  APRSClient::run(client.clone());
+
+  // set the filter at lat: 47, lon: 4 with radius of 100km
+  client.lock().unwrap().set_filter("r/47/7/100").unwrap();
+
+  // keep the client alive
+  loop {
+    std::thread::sleep(std::time::Duration::from_secs(1));
+  }
+}
+
+```
+
 
 
 ## TODO:

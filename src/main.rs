@@ -1,6 +1,7 @@
 mod parser;
 use parser::Parse;
 use std::io::Error;
+use log::debug;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
 
@@ -14,12 +15,13 @@ fn main() -> Result<(), Error> {
     // This does not work completely yet...
     let result = parser::OgnTransmission::parse(message);
     if let Some(v) = result {
+      debug!("read message");
       println!("{:#?}", v);
     }
   };
 
   // pass the callback to the client!
-  let client = APRSClient::new("aprs.glidernet.org", PORT::FULLFEED, Box::new(callback));
+  let client = APRSClient::new("aprs.glidernet.org", PORT::FILTER, Box::new(callback));
 
   // log into the network
   let login_data = LoginData::new().user_name("Beat").pass_code("28915");
@@ -38,13 +40,8 @@ fn main() -> Result<(), Error> {
 
   APRSClient::run(client.clone());
 
-  // example of sending a position message
-  // client
-  //   .send_message("user AE5PL-TS pass -1 vers testsoftware 1.0_05 filter r/33.25/-96.5/50")
-  //   .unwrap();
-
-  // example of sending a status message
-  // TODO
+  // set filter
+  client.lock().unwrap().set_filter("r/47/7/100").unwrap();
 
   println!("keeping client alive");
   loop {

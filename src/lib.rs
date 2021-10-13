@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate pretty_assertions;
 
+use chrono::Timelike;
+use chrono::Utc;
 use log::{debug, error, info};
 use std::fmt::Debug;
 use std::io::{BufRead, BufReader, LineWriter, Write};
@@ -12,7 +14,7 @@ use std::sync::Mutex;
 pub mod parser;
 
 #[repr(u16)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PORT {
   /// Subscribe to the full feed (note: no filtering but does not require authentication)
   FULLFEED = 10152,
@@ -59,7 +61,7 @@ impl APRSClient {
       let mut locked_client = client.lock().unwrap();
 
       // try to connect to the server
-      locked_client.connect();
+      let _ = locked_client.connect();
     }
 
     client
@@ -141,7 +143,7 @@ impl APRSClient {
   pub fn run(this: Arc<Mutex<Self>>) {
     info!("starting the client reader thread...");
 
-      //
+    //
     let mut lock = this.lock().unwrap();
     if !lock.m_is_connected {
       info!("currently not connected, trying to connect...");
@@ -170,21 +172,28 @@ impl APRSClient {
       ));
     }
 
-    // create the position message
-
     // get the timestamp
-    // let now = Utc::now();
+    let now = Utc::now();
+    let mut time_string = String::new();
+    time_string.push_str(&now.minute().to_string());
+    time_string.push_str(&now.hour().to_string());
+    time_string.push_str(&now.second().to_string());
+
     // convert time to wonky format
-    let now_wonky = "123456";
     let position = "5123.45N/00123.45E";
     let ground_track = 180;
     let ground_speed = 25;
     let altitude = 1000;
 
-    // general aprs message (i.e. before !xx! separator)
+    // general aprs message (i.e. before ogn extras)
     let position_message = format!(
       "{}>OGNAPP:/{}h{}'{}/{}/A={}",
-      "beat", now_wonky, position, ground_track, ground_speed, altitude
+      self.m_user.as_ref().unwrap(),
+      time_string,
+      position,
+      ground_track,
+      ground_speed,
+      altitude
     );
 
     self.send_message(&position_message)
@@ -199,11 +208,17 @@ impl APRSClient {
     }
   }
 
-  pub fn set_filter(&mut self, filter_expression: &str) {
+  pub fn set_filter(&mut self, filter_expression: &str) -> Result<(), std::io::Error> {
+    if self.m_port != PORT::FILTER {
+      error!("connected to fullfeed port, cannot set a filter");
+      return Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "cannot set filter on fullfeed port",
+      ));
+    }
+
     debug!("applying filter: '{}'", filter_expression);
-    self
-      .send_message(&format!("#filter {}", filter_expression))
-      .unwrap();
+    self.send_message(&format!("#filter {}", filter_expression))
   }
 
   // ------------------------------------------------------------------------------
@@ -211,6 +226,8 @@ impl APRSClient {
   // ------------------------------------------------------------------------------
   fn read(&mut self) -> Result<String, std::io::Error> {
     let mut string_buffer = String::new();
+
+    //TODO add timeout and disconnect
 
     self
       .m_reader
@@ -406,3 +423,22 @@ impl OgnStatusMessage {
     self
   }
 }
+
+// {
+//   "/z",  //  0 = ?
+//   "/'",  //  1 = (moto-)glider    (most frequent)
+//   "/'",  //  2 = tow plane        (often)
+//   "/X",  //  3 = helicopter       (often)
+//   "/g" , //  4 = parachute        (rare but seen - often mixed with drop plane)
+//   "\\^", //  5 = drop plane       (seen)
+//   "/g" , //  6 = hang-glider      (rare but seen)
+//   "/g" , //  7 = para-glider      (rare but seen)
+//   "\\^", //  8 = powered aircraft (often)
+//   "/^",  //  9 = jet aircraft     (rare but seen)
+//   "/z",  //  A = UFO              (people set for fun)
+//   "/O",  //  B = balloon          (seen once)
+//   "/O",  //  C = airship          (seen once)
+//   "/'",  //  D = UAV              (drones, can become very common)
+//   "/z",  //  E = ground support   (ground vehicles at airfields)
+//   "\\n"  //  F = static object    (ground relay ?)
+// } ;

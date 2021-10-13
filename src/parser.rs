@@ -25,13 +25,13 @@ pub struct OgnHeader {
 
 #[derive(Debug, PartialEq)]
 pub struct OgnBody {
-  timestamp: DateTime<Utc>,
+  timestamp: DateTime<Utc>, // Utc
   position: Coordinate<f32>,
-  ground_speed: f32,
+  ground_speed: f32, // [knots]
   ground_turning_rate: Option<f32>,
-  climb_rate: Option<f32>,
-  altitude: f32,
-  ground_track: u16,
+  climb_rate: Option<f32>, // [fpm]
+  altitude: f32, // [feet]
+  ground_track: u16, // [degrees]
   gps_accuracy: Option<String>,
   id: Option<String>,
 }
@@ -52,7 +52,7 @@ impl Parse for OgnTransmission {
 
     let header = parse_header(splits[0]);
     if let None = header {
-      error!("error while parsing header, skipping message");
+      error!("error while parsing header, skipping message: {}", message);
       return None;
     }
 
@@ -60,7 +60,7 @@ impl Parse for OgnTransmission {
 
     let body = parse_body(splits[1]);
     if let None = body {
-      error!("error while parsing body, skipping message");
+      error!("error while parsing body, skipping message: {}", message);
       return None;
     }
 
