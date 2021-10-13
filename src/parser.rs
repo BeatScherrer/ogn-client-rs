@@ -45,7 +45,7 @@ impl Parse for OgnTransmission {
       return None;
     }
 
-    // TODO add more checks before actually parsing
+    // TODO add more checks before actually parsing, e.g. station info, heartbeats etc.
 
     // first: split at ':' to split the header from the message
     let splits: Vec<&str> = message.split(':').collect();
@@ -93,17 +93,42 @@ fn parse_header(header: &str) -> Option<OgnHeader> {
 }
 
 fn parse_body(body: &str) -> Option<OgnBody> {
-  // Parse aprs fields
-  let timestamp =
-    parse_time(body).expect(format!("No ground track found in message: {}", body).as_str());
-  let coordinate =
-    parse_coordinate(body).expect(format!("No coordinate found in message: {}", body).as_str());
-  let ground_track =
-    parse_ground_track(body).expect(format!("No ground track found in message: {}", body).as_str());
-  let ground_speed =
-    parse_ground_speed(body).expect(format!("No ground track found in message: {}", body).as_str());
-  let altitude =
-    parse_altitude(body).expect(format!("No ground track found in message: {}", body).as_str());
+  // Parse aprs fields, required for a regular transmission
+  let timestamp = parse_time(body);
+  if let None = timestamp {
+    error!("no timestamp in body: '{}' ignoring message", body);
+    return None;
+  }
+  let timestamp = timestamp.unwrap();
+
+  let coordinate = parse_coordinate(body);
+  if let None = coordinate {
+    error!("no coordinate in body: '{}' ignoring message", body);
+
+    return None;
+  }
+  let coordinate = coordinate.unwrap();
+
+  let ground_track = parse_ground_track(body);
+  if let None = ground_track {
+    error!("no ground_track in body: '{}' ignoring message", body);
+    return None;
+  }
+  let ground_track = ground_track.unwrap();
+
+  let ground_speed = parse_ground_speed(body);
+  if let None = ground_speed {
+    error!("no ground_speed in body: '{}' ignoring message", body);
+    return None;
+  }
+  let ground_speed = ground_speed.unwrap();
+
+  let altitude = parse_altitude(body);
+  if let None = altitude {
+    error!("no altitude in body: '{}' ignoring message", body);
+    return None;
+  }
+  let altitude = altitude.unwrap();
 
   // parse ogn part
   let id = parse_id(body);
