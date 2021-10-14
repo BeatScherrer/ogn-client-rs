@@ -52,16 +52,15 @@ fn main() -> Result<(), Error> {
 
   let login_data = LoginData::new().user_name("YOUR_USER_NAME").pass_code("YOUR_PASSCODE");
 
-  {
-    let mut locked = client.lock().unwrap();
+  // try to connect until connected
 
-    while !locked.is_connectd() {
-      let _ = locked.connect();
+  while !client.lock().unwrap().is_connectd() {
+    let _ = client.lock().unwrap().connect();
 
-      std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+    std::thread::sleep(std::time::Duration::from_secs(1));
   }
 
+  // start listening
   APRSClient::run(client.clone());
 
   // set the filter at lat: 47, lon: 4 with radius of 100km

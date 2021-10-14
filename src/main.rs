@@ -1,7 +1,7 @@
 mod parser;
+use log::debug;
 use parser::Parse;
 use std::io::Error;
-use log::debug;
 
 use ogn_client_rs::{APRSClient, LoginData, PORT};
 
@@ -26,17 +26,13 @@ fn main() -> Result<(), Error> {
   // log into the network
   let login_data = LoginData::new().user_name("Beat").pass_code("28915");
 
-  {
-    let mut locked = client.lock().unwrap();
+  while !client.lock().unwrap().is_connected() {
+    let _ = client.lock().unwrap().connect();
 
-    while !locked.is_connected() {
-      let _ = locked.connect();
-
-      std::thread::sleep(std::time::Duration::from_secs(1));
-    }
-
-    locked.login(login_data)?;
+    std::thread::sleep(std::time::Duration::from_secs(1));
   }
+
+  client.lock().unwrap().login(login_data)?;
 
   APRSClient::run(client.clone());
 
