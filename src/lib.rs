@@ -99,8 +99,8 @@ impl APRSClient {
     Ok(())
   }
 
-  pub fn login(&mut self, login_data: LoginData) -> Result<(), std::io::Error> {
-    info!("login with following data: {:?}...", &login_data);
+  pub fn login(&mut self, login_data: &LoginData) -> Result<(), std::io::Error> {
+    info!("logging in with:\n{:#?}", &login_data);
 
     let login_message = APRSClient::create_aprs_login(&login_data);
 
@@ -137,7 +137,11 @@ impl APRSClient {
       ));
     }
 
-    self.login(LoginData::new())
+    self.login(&LoginData::new())
+  }
+
+  pub fn is_logged_in(&self) -> bool {
+    self.m_logged_in
   }
 
   pub fn run(this: Arc<Mutex<Self>>) {
@@ -159,6 +163,8 @@ impl APRSClient {
       while !lock.m_terminate {
         let message = lock.read().unwrap();
         (lock.m_callback)(&message);
+        // std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_secs(1));
       }
     }));
   }
@@ -275,10 +281,6 @@ impl APRSClient {
       login_data.user_name, login_data.pass_code, login_data.app_name, login_data.app_version
     )
   }
-
-  fn is_logged_in(&self) -> bool {
-    self.m_logged_in
-  }
 }
 
 impl Drop for APRSClient {
@@ -290,15 +292,15 @@ impl Drop for APRSClient {
 }
 
 #[derive(Debug)]
-pub struct LoginData<'a> {
-  pub user_name: &'a str,
-  pub pass_code: &'a str,
-  pub app_name: &'a str,
-  pub app_version: &'a str,
+pub struct LoginData {
+  pub user_name: &'static str,
+  pub pass_code: &'static str,
+  pub app_name: &'static str,
+  pub app_version: &'static str,
 }
 
-impl<'a> LoginData<'a> {
-  pub fn new() -> LoginData<'a> {
+impl LoginData {
+  pub fn new() -> LoginData {
     Self {
       user_name: "N0CALL",
       pass_code: "-1",
@@ -307,27 +309,27 @@ impl<'a> LoginData<'a> {
     }
   }
 
-  pub fn user_name(mut self, user_name: &'a str) -> LoginData<'a> {
+  pub fn user_name(mut self, user_name: &'static str) -> LoginData {
     self.user_name = user_name;
     self
   }
 
-  pub fn pass_code(mut self, pass_code: &'a str) -> LoginData<'a> {
+  pub fn pass_code(mut self, pass_code: &'static str) -> LoginData {
     self.pass_code = pass_code;
     self
   }
 
-  pub fn app_name(mut self, app_name: &'a str) -> LoginData<'a> {
+  pub fn app_name(mut self, app_name: &'static str) -> LoginData {
     self.app_name = app_name;
     self
   }
 
-  pub fn app_version(mut self, app_version: &'a str) -> LoginData<'a> {
+  pub fn app_version(mut self, app_version: &'static str) -> LoginData {
     self.app_version = app_version;
     self
   }
 
-  pub fn build(&mut self) -> &mut LoginData<'a> {
+  pub fn build(self) -> LoginData {
     self
   }
 }

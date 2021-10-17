@@ -32,7 +32,7 @@ fn main() -> Result<(), Error> {
     std::thread::sleep(std::time::Duration::from_secs(1));
   }
 
-  client.lock().unwrap().login(login_data)?;
+  client.lock().unwrap().login(&login_data)?;
 
   APRSClient::run(client.clone());
 

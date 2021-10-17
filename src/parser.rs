@@ -1,3 +1,5 @@
+// TODO add parser error type or use serde?
+
 use chrono::prelude::*;
 use geocoding::Coordinate;
 use log::{debug, error};
@@ -18,22 +20,22 @@ pub struct OgnTransmission {
 
 #[derive(Debug, PartialEq)]
 pub struct OgnHeader {
-  sender_id: String,
-  receiver: String,
-  transmission_method: String,
+  pub sender_id: String,
+  pub receiver: String,
+  pub transmission_method: String,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct OgnBody {
-  timestamp: DateTime<Utc>, // Utc
-  position: Coordinate<f32>,
-  ground_speed: f32, // [knots]
-  ground_turning_rate: Option<f32>,
-  climb_rate: Option<f32>, // [fpm]
-  altitude: f32, // [feet]
-  ground_track: u16, // [degrees]
-  gps_accuracy: Option<String>,
-  id: Option<String>,
+  pub timestamp: DateTime<Utc>, // Utc
+  pub position: Coordinate<f32>,
+  pub ground_speed: f32, // [knots]
+  pub ground_turning_rate: Option<f32>,
+  pub climb_rate: Option<f32>, // [fpm]
+  pub altitude: f32,           // [feet]
+  pub ground_track: u16,       // [degrees]
+  pub gps_accuracy: Option<String>,
+  pub id: Option<String>,
 }
 
 impl Parse for OgnTransmission {

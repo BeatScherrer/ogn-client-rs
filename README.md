@@ -41,6 +41,8 @@ use std::io::Error;
 use ogn_client_rs::{APRSClient, LoginData, PORT};
 
 fn main() -> Result<(), Error> {
+
+  // callback triggered on ogn message reception
   let callback = |message: &str| {
     let result = parser::OgnTransmission::parse(message);
     if let Some(value) = result {
@@ -50,15 +52,16 @@ fn main() -> Result<(), Error> {
 
   let client = APRSClient::new("aprs.glidernet.org", PORT::FILTER, Box::new(callback));
 
-  let login_data = LoginData::new().user_name("YOUR_USER_NAME").pass_code("YOUR_PASSCODE");
-
   // try to connect until connected
-
   while !client.lock().unwrap().is_connectd() {
     let _ = client.lock().unwrap().connect();
 
     std::thread::sleep(std::time::Duration::from_secs(1));
   }
+
+  // login
+  let login_data = LoginData::new().user_name("YOUR_USER_NAME").pass_code("YOUR_PASSCODE");
+  client.lock().unwrap().login(&login_data);
 
   // start listening
   APRSClient::run(client.clone());
