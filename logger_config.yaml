@@ -9,6 +9,6 @@ appenders:
       pattern: "{h({d(%H:%M:%S)} | {l} | {f}:{L} {m}{n})}"
 
 root:
-  level: info
+  level: debug
   appenders:
     - stdout
