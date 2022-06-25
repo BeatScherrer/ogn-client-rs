@@ -68,10 +68,7 @@ impl Parse for OgnTransmission {
 
         let body = body.unwrap();
 
-        Some(OgnTransmission {
-            header: header,
-            body: body,
-        })
+        Some(OgnTransmission { header, body })
     }
 }
 

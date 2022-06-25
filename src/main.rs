@@ -1,5 +1,5 @@
 mod parser;
-use log::{debug, info};
+use log::debug;
 use parser::Parse;
 use std::io::Error;
 
